@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonJS",
+    "outDir": "dist", //optionally use “” to not use an output folder
+    "sourceMap": true,
+    "strict": true,
+  },
+  "include": ["src/**/*"],
+}
