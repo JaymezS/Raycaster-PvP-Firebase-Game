@@ -14,7 +14,6 @@ class Canvas {
     constructor() {
         this.screen.width = Canvas.WIDTH;
         this.screen.height = Canvas.HEIGHT;
-        console.log('canvas resized');
     }
     get context() {
         return this._context;

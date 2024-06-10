@@ -1,7 +1,7 @@
 "use strict";
 class Driver {
     constructor() {
-        Game.instance;
+        Canvas.instance;
     }
 }
 new Driver();
