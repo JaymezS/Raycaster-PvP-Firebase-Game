@@ -9,8 +9,8 @@ class Canvas {
     }
     screen = document.getElementById("game-screen");
     _context = this.screen.getContext("2d");
-    static WIDTH = 900;
-    static HEIGHT = 500;
+    static WIDTH = 960;
+    static HEIGHT = 640;
     constructor() {
         this.screen.width = Canvas.WIDTH;
         this.screen.height = Canvas.HEIGHT;

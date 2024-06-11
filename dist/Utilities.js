@@ -9,5 +9,9 @@ class Utilities {
         CONTEXT.stroke();
         CONTEXT.closePath();
     }
+    static drawPixel(x, y, color) {
+        Canvas.instance.context.fillStyle = color;
+        Canvas.instance.context.fillRect(x, y, Game.instance.resolution, Game.instance.resolution);
+    }
 }
 //# sourceMappingURL=Utilities.js.map

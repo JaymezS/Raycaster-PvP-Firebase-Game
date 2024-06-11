@@ -35,13 +35,17 @@ class PlayerController {
                 this.sKeyPressed = false;
             }
         });
+        document.addEventListener("mousemove", (e) => {
+            this.player.rotatePitch(e.movementY * this.player.rotationSpeed);
+            this.player.rotateYaw(e.movementX * this.player.rotationSpeed);
+        });
     }
     updatePlayer() {
         if (this.dKeyPressed) {
-            this.player.rotateRight();
+            this.player.moveRight();
         }
         if (this.aKeyPressed) {
-            this.player.rotateLeft();
+            this.player.moveLeft();
         }
         if (this.wKeyPressed) {
             this.player.moveForward();

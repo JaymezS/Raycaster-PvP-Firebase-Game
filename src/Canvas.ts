@@ -11,8 +11,8 @@ class Canvas {
 
   readonly screen: HTMLCanvasElement = document.getElementById("game-screen") as HTMLCanvasElement;
   private _context: CanvasRenderingContext2D = this.screen.getContext("2d") as CanvasRenderingContext2D;
-  public static WIDTH: number = 900;
-  public static HEIGHT: number = 500;
+  public static WIDTH: number = 960;
+  public static HEIGHT: number = 640;
 
   private constructor() {
     this.screen.width = Canvas.WIDTH;

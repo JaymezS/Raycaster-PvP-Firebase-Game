@@ -8,4 +8,9 @@ class Utilities {
     CONTEXT.stroke();
     CONTEXT.closePath();
   }
+
+  public static drawPixel(x: number, y: number, color: string) {
+    Canvas.instance.context.fillStyle = color;
+    Canvas.instance.context.fillRect(x, y, Game.instance.resolution, Game.instance.resolution);
+  }
 }
