@@ -47,6 +47,8 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
 class StartGameCommand implements Command {
   public execute(): void {
     Game.instance.startGame()
+    Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand)
+    Game.instance.controller.assignMouseClickCommand(undefined)
   }
 }
 
@@ -57,5 +59,26 @@ class DisplayMenuAndSetMouseControllerCommand implements Command {
   public execute(): void {
     this.menu.drawMenuAndMenuButtons();
     Game.instance.controller.assignMouseClickCommand(new MenuMouseClickedEventHandlerCommand(this.menu));
+  }
+}
+
+
+abstract class HandleMouseMoveCommand implements Command {
+  protected dx: number = 0;
+  protected dy: number = 0
+  public assignMovement(dx: number, dy: number): HandleMouseMoveCommand {
+    this.dx = dx
+    this.dy = dy
+    return this
+  }
+
+  abstract execute(): void;
+}
+
+
+class MainGameHandleMouseMoveCommand extends HandleMouseMoveCommand implements Command {
+  public execute(): void {
+    Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed)
+    Game.instance.player.rotateYaw(this.dx * Game.instance.player.rotationSpeed)
   }
 }

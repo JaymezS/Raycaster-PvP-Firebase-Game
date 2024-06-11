@@ -26,6 +26,7 @@ class PlayerController {
     mousePositionX = 0;
     mousePositionY = 0;
     mouseClickCommand;
+    mouseMoveCommand;
     constructor(player) {
         this.player = player;
         document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
@@ -63,13 +64,18 @@ class PlayerController {
                 this.spaceKeyPressed = false;
             }
         });
-        document.addEventListener("mousemove", (e) => {
-            this.player.rotatePitch(e.movementY * this.player.rotationSpeed);
-            this.player.rotateYaw(e.movementX * this.player.rotationSpeed);
-        });
+        document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e));
     }
     assignMouseClickCommand(c) {
         this.mouseClickCommand = c;
+    }
+    assignMouseMoveCommand(c) {
+        this.mouseMoveCommand = c;
+    }
+    handleMouseMoveEvent(event) {
+        if (this.mouseMoveCommand !== undefined) {
+            this.mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute();
+        }
     }
     handleMouseClickEvent(event) {
         const MOUSE_X = event.clientX;

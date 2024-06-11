@@ -26,6 +26,7 @@ class PlayerController {
   protected mousePositionX: number = 0;
   protected mousePositionY: number = 0;
   private mouseClickCommand: HandleMouseClickCommand | undefined;
+  private mouseMoveCommand: HandleMouseMoveCommand | undefined
 
   constructor(readonly player: Player) {
     document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
@@ -65,15 +66,21 @@ class PlayerController {
       }
     });
 
-    document.addEventListener("mousemove", (e) => {
-      
-      this.player.rotatePitch(e.movementY * this.player.rotationSpeed)
-      this.player.rotateYaw(e.movementX * this.player.rotationSpeed)
-    })
+    document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e))
   }
 
-  public assignMouseClickCommand(c: HandleMouseClickCommand) {
+  public assignMouseClickCommand(c: HandleMouseClickCommand | undefined) {
     this.mouseClickCommand = c;
+  }
+
+  public assignMouseMoveCommand(c: HandleMouseMoveCommand | undefined) {
+    this.mouseMoveCommand = c
+  }
+
+  private handleMouseMoveEvent(event: MouseEvent) {
+    if (this.mouseMoveCommand !== undefined) {
+      this.mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute()
+    }
   }
 
   private handleMouseClickEvent(event: MouseEvent) {

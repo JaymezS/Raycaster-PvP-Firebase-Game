@@ -1,6 +1,6 @@
 class Game {
   private static _instance: Game | undefined;
-  private player: Player = new Player()
+  readonly player: Player = new Player()
   readonly gameMap: GameMap = new GameMap()
   readonly controller: PlayerController = new PlayerController(this.player)
   private context = Canvas.instance.context;

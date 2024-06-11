@@ -31,6 +31,8 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
 class StartGameCommand {
     execute() {
         Game.instance.startGame();
+        Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand);
+        Game.instance.controller.assignMouseClickCommand(undefined);
     }
 }
 class DisplayMenuAndSetMouseControllerCommand {
@@ -41,6 +43,21 @@ class DisplayMenuAndSetMouseControllerCommand {
     execute() {
         this.menu.drawMenuAndMenuButtons();
         Game.instance.controller.assignMouseClickCommand(new MenuMouseClickedEventHandlerCommand(this.menu));
+    }
+}
+class HandleMouseMoveCommand {
+    dx = 0;
+    dy = 0;
+    assignMovement(dx, dy) {
+        this.dx = dx;
+        this.dy = dy;
+        return this;
+    }
+}
+class MainGameHandleMouseMoveCommand extends HandleMouseMoveCommand {
+    execute() {
+        Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed);
+        Game.instance.player.rotateYaw(this.dx * Game.instance.player.rotationSpeed);
     }
 }
 //# sourceMappingURL=Command.js.map
