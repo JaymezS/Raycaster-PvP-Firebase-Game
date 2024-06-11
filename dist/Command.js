@@ -28,4 +28,19 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
         }
     }
 }
+class StartGameCommand {
+    execute() {
+        Game.instance.startGame();
+    }
+}
+class DisplayMenuAndSetMouseControllerCommand {
+    menu;
+    constructor(menu) {
+        this.menu = menu;
+    }
+    execute() {
+        this.menu.drawMenuAndMenuButtons();
+        Game.instance.controller.assignMouseClickCommand(new MenuMouseClickedEventHandlerCommand(this.menu));
+    }
+}
 //# sourceMappingURL=Command.js.map

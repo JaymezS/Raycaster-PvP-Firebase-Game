@@ -2,7 +2,7 @@ class Game {
   private static _instance: Game | undefined;
   private player: Player = new Player()
   readonly gameMap: GameMap = new GameMap()
-  private controller: PlayerController = new PlayerController(this.player)
+  readonly controller: PlayerController = new PlayerController(this.player)
   private context = Canvas.instance.context;
   private gameLoop: any = undefined;
   readonly FPS: number = 30;
@@ -11,6 +11,8 @@ class Game {
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 20
   readonly maxRenderDistance: number = 10 * GameMap.tileSize;
+  
+  private mainMenu: CompositeMenu = new CompositeMenu("main menu")
 
 
   private test: boolean = false;
@@ -19,11 +21,33 @@ class Game {
   private players: Player[] = [this.player]
 
   private constructor() {
+    this.composeMainMenu()
+  }
+
+  public start() {
+    new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute()
+  }
+
+  public startGame() {
     this.gameLoop = setInterval(() => {
       this.player.updateVerticalMovementDueToGravity()
       this.controller.updatePlayer()
       this.renderForPlayer(this.player)
     }, this.timeInterval);
+  }
+
+  public composeMainMenu(): void {
+    const START_BUTTON: MenuButton = new MenuButton(
+      Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
+      Canvas.HEIGHT / 2 - MenuButton.buttonHeight / 2,
+      "start game"
+    )
+    START_BUTTON.addCommand(new StartGameCommand())
+    this.mainMenu.addMenuButton(START_BUTTON)
+  }
+
+  public endGame() {
+    clearInterval(this.gameLoop)
   }
 
   private clearScreen(): void {

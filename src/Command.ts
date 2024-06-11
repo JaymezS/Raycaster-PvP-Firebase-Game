@@ -2,6 +2,9 @@ interface Command {
   execute(): void;
 }
 
+
+
+
 abstract class HandleMouseClickCommand implements Command {
   
   protected mousePositionX: number = 0
@@ -17,7 +20,6 @@ abstract class HandleMouseClickCommand implements Command {
 
   abstract execute(): void;
 }
-
 
 
 class MainGameMouseClickedEventHandlerCommand extends HandleMouseClickCommand{
@@ -38,5 +40,22 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
         break;
       }
     }
+  }
+}
+
+
+class StartGameCommand implements Command {
+  public execute(): void {
+    Game.instance.startGame()
+  }
+}
+
+
+class DisplayMenuAndSetMouseControllerCommand implements Command {
+  constructor(private menu: CompositeMenu) { }
+
+  public execute(): void {
+    this.menu.drawMenuAndMenuButtons();
+    Game.instance.controller.assignMouseClickCommand(new MenuMouseClickedEventHandlerCommand(this.menu));
   }
 }

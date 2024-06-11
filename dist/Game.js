@@ -12,14 +12,29 @@ class Game {
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
     maxRenderDistance = 10 * GameMap.tileSize;
+    mainMenu = new CompositeMenu("main menu");
     test = false;
     players = [this.player];
     constructor() {
+        this.composeMainMenu();
+    }
+    start() {
+        new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();
+    }
+    startGame() {
         this.gameLoop = setInterval(() => {
             this.player.updateVerticalMovementDueToGravity();
             this.controller.updatePlayer();
             this.renderForPlayer(this.player);
         }, this.timeInterval);
+    }
+    composeMainMenu() {
+        const START_BUTTON = new MenuButton(Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2, Canvas.HEIGHT / 2 - MenuButton.buttonHeight / 2, "start game");
+        START_BUTTON.addCommand(new StartGameCommand());
+        this.mainMenu.addMenuButton(START_BUTTON);
+    }
+    endGame() {
+        clearInterval(this.gameLoop);
     }
     clearScreen() {
         this.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);

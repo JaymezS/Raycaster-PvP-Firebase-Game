@@ -20,6 +20,7 @@ class Canvas {
     }
     startGame() {
         Game.instance;
+        Game.instance.start();
     }
 }
 //# sourceMappingURL=Canvas.js.map
