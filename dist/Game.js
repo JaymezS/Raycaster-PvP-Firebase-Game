@@ -29,22 +29,6 @@ class Game {
             const WALL_LINE_HEIGHT = GameMap.tileSize / CORRECTED_DISTANCE * Canvas.HEIGHT;
             const LINE_START_POSITION = Canvas.HEIGHT / 2 - WALL_LINE_HEIGHT / 2;
             const LINE_END_POSITION = Canvas.HEIGHT / 2 + WALL_LINE_HEIGHT / 2;
-            /*
-            GPT shit code for ceiling, tried to fix
-            const RENDERING_QUALITY: number = 10
-            const LINE_SEGMENT_LENGTH: number = Math.ceil(LINE_START_POSITION / RENDERING_QUALITY);
-            for (let y = 0; y < LINE_START_POSITION; y+= LINE_SEGMENT_LENGTH) {
-              const ceilingDistance = Canvas.HEIGHT / (Canvas.HEIGHT - 2 * y);
-              const brightness = Math.max(0, 1 - ceilingDistance / 10);
-              Utilities.drawLine(rayColumn, y, rayColumn, y+ LINE_SEGMENT_LENGTH,
-                `rgb(
-                ${Math.floor(this.gameMap.ceilingColor[0] * brightness)},
-                ${Math.floor(this.gameMap.ceilingColor[1] * brightness)},
-                ${Math.floor(this.gameMap.ceilingColor[2] * brightness)}
-                )`
-              );
-            }
-            */
             // custom shading, either use raw distance or distance to wall, either is fine, raw is more realistic
             // render the wall
             const brightness = Math.min(GameMap.tileSize / (RAW_RAY_RESULTS[0]), 1);
