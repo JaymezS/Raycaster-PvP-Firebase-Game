@@ -6,10 +6,10 @@ class Game {
     controller = new PlayerController(this.player);
     context = Canvas.instance.context;
     gameLoop = undefined;
-    FPS = 60;
+    FPS = 30;
     timeInterval = 1000 / this.FPS;
     resolution = 8;
-    gravitationalAccelerationConstant = 2;
+    gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
     players = [this.player];
     constructor() {
@@ -27,7 +27,7 @@ class Game {
         for (let x = 0; x < Canvas.WIDTH; x += this.resolution) {
             for (let y = 0; y < Canvas.HEIGHT; y += this.resolution) {
                 const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
-                const CURRENT_RAY_PITCH = (player.pitch - player.fov / 2) + (y / Canvas.HEIGHT) * player.fov;
+                const CURRENT_RAY_PITCH = (player.pitch - player.fov / 4) + (y / Canvas.HEIGHT) * player.fov / 2;
                 const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
                 // cos angle = distance to wall (adj) / raw ray distance (hyp)
                 // distance to wall = raw distance * cos angle

@@ -5,10 +5,10 @@ class Game {
   private controller: PlayerController = new PlayerController(this.player)
   private context = Canvas.instance.context;
   private gameLoop: any = undefined;
-  readonly FPS: number = 60;
+  readonly FPS: number = 30;
   private timeInterval: number = 1000/this.FPS
   readonly resolution: number = 8;
-  readonly gravitationalAccelerationConstant: number = 2
+  readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 20
 
   private players: Player[] = [this.player]
@@ -31,7 +31,7 @@ class Game {
       for (let y: number = 0; y < Canvas.HEIGHT; y += this.resolution) {
          
         const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
-        const CURRENT_RAY_PITCH = (player.pitch - player.fov / 2) + (y / Canvas.HEIGHT) * player.fov;
+        const CURRENT_RAY_PITCH = (player.pitch - player.fov / 4) + (y / Canvas.HEIGHT) * player.fov/2;
 
         const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
 

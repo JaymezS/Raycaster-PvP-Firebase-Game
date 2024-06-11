@@ -11,12 +11,12 @@ class Player {
     _rotationSpeed = Math.PI / 180;
     _fov = Math.PI / 4; // Field of view
     grounded = false;
-    maxPitch = Math.PI / 4;
+    maxPitch = Math.PI / 2;
     // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
     // private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
     // private zVelocity: number = this._speed * Math.sin(this._pitch)
-    xVelocity = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
-    yVelocity = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+    xVelocity = this._speed * Math.cos(this._yaw);
+    yVelocity = this._speed * Math.sin(this._yaw);
     zVelocity = 0;
     get x() {
         return this._x;
@@ -68,7 +68,7 @@ class Player {
     }
     jump() {
         if (this.grounded) {
-            this.zVelocity = -20;
+            this.zVelocity = -16;
         }
     }
     rotateYaw(deg) {
@@ -108,6 +108,11 @@ class Player {
             if (this.zVelocity > 0) {
                 this.grounded = true;
             }
+            else {
+                this._z -= this.zVelocity;
+                this.zVelocity = 0;
+                return;
+            }
             this._z -= this.zVelocity;
         }
         else {
@@ -115,8 +120,8 @@ class Player {
         }
     }
     updateVelocities() {
-        this.xVelocity = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
-        this.yVelocity = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+        this.xVelocity = this._speed * Math.cos(this._yaw);
+        this.yVelocity = this._speed * Math.sin(this._yaw);
     }
     updateVerticalMovementDueToGravity() {
         if (!this.grounded) {

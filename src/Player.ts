@@ -12,15 +12,15 @@ class Player {
 
   private grounded: boolean = false;
 
-  private maxPitch: number = Math.PI / 4
+  private maxPitch: number = Math.PI / 2
   
   
   // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
   // private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
   // private zVelocity: number = this._speed * Math.sin(this._pitch)
 
-  private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
-  private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+  private xVelocity: number = this._speed * Math.cos(this._yaw);
+  private yVelocity: number = this._speed * Math.sin(this._yaw);
   private zVelocity: number = 0
   
   public get x(): number {
@@ -81,7 +81,7 @@ class Player {
 
   public jump(): void {
     if (this.grounded) {
-      this.zVelocity = -20
+      this.zVelocity = -16
     }
   }
 
@@ -131,6 +131,10 @@ class Player {
     if (this.collideWithWall()) {
       if (this.zVelocity > 0) {
         this.grounded = true
+      } else {
+        this._z -= this.zVelocity;
+        this.zVelocity = 0
+        return
       }
       this._z -= this.zVelocity;
     } else {
@@ -140,8 +144,8 @@ class Player {
 
 
   public updateVelocities(): void {
-    this.xVelocity = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
-    this.yVelocity = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+    this.xVelocity = this._speed * Math.cos(this._yaw);
+    this.yVelocity = this._speed * Math.sin(this._yaw);
   }
 
   public updateVerticalMovementDueToGravity(): void {
