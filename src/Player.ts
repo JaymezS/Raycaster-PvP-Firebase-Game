@@ -10,10 +10,18 @@ class Player {
   private _rotationSpeed: number = Math.PI/180
   private _fov = Math.PI / 4; // Field of view
 
-  private horizontalSpeed: number = Math.cos(this._pitch) * this._speed;
-  private xVelocity: number = this.horizontalSpeed * Math.cos(this._yaw);
-  private yVelocity: number = this.horizontalSpeed * Math.sin(this._yaw);
-  private zVelocity: number = this._speed * Math.sin(this._pitch)
+  private grounded: boolean = false;
+
+  private maxPitch: number = Math.PI / 4
+  
+  
+  // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
+  // private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+  // private zVelocity: number = this._speed * Math.sin(this._pitch)
+
+  private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
+  private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+  private zVelocity: number = 0
   
   public get x(): number {
     return this._x
@@ -49,9 +57,7 @@ class Player {
 
   public moveForward(): void {
     this.updateVelocities()
-    this.moveX()
-    this.moveY()
-    this.moveZ()
+    this.move()
   }
 
 
@@ -60,9 +66,7 @@ class Player {
     const temp: number = this.xVelocity;
     this.xVelocity = -this.yVelocity
     this.yVelocity = temp
-    this.moveX()
-    this.moveY()
-    this.moveZ()
+    this.move()
   }
 
 
@@ -71,17 +75,28 @@ class Player {
     const temp: number = this.yVelocity;
     this.yVelocity = -this.xVelocity
     this.xVelocity = temp
-    this.moveX()
-    this.moveY()
-    this.moveZ()
+    this.move()
+  }
+
+
+  public jump(): void {
+    if (this.grounded) {
+      this.zVelocity = -20
+    }
   }
 
 
   public rotateYaw(deg: number): void {
     this._yaw += deg
   }
+
   public rotatePitch(deg: number): void {
-    this._pitch += deg
+    if (
+      this._pitch + deg <= this.maxPitch  &&
+      this._pitch + deg >= -this.maxPitch
+    ) {
+      this._pitch += deg
+    }
   }
 
 
@@ -89,10 +104,12 @@ class Player {
     this.updateVelocities()
     this.xVelocity *= -1
     this.yVelocity *= -1
-    this.zVelocity *= -1
-    this.moveX()
-    this.moveY()
-    this.moveZ()
+    this.move()
+  }
+
+  public move(): void {
+    this.moveX();
+    this.moveY();
   }
 
   public moveX(): void {
@@ -112,26 +129,39 @@ class Player {
   public moveZ(): void {
     this._z += this.zVelocity
     if (this.collideWithWall()) {
+      if (this.zVelocity > 0) {
+        this.grounded = true
+      }
       this._z -= this.zVelocity;
+    } else {
+      this.grounded = false
     }
   }
 
 
   public updateVelocities(): void {
-    this.horizontalSpeed = Math.cos(this._pitch) * this._speed;
-    this.xVelocity = this.horizontalSpeed * Math.cos(this._yaw);
-    this.yVelocity = this.horizontalSpeed * Math.sin(this._yaw);
-    this.zVelocity = this._speed * Math.sin(this._pitch)
+    this.xVelocity = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
+    this.yVelocity = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
+  }
+
+  public updateVerticalMovementDueToGravity(): void {
+    if (!this.grounded) {
+      if (Math.abs(this.zVelocity) <= Game.instance.terminalVelocity) {
+        this.zVelocity += Game.instance.gravitationalAccelerationConstant;
+      }
+    } else if (this.zVelocity > 0) {
+      this.zVelocity = 0
+    }
+    this.moveZ()
   }
 
   public pointInWall(x: number, y: number, z: number) {
-    const GAME_MAP: number[][][] = Game.instance.gameMap.map
-
-    const MAP_X: number = Math.floor(x / GameMap.tileSize);
-    const MAP_Y: number = Math.floor(y / GameMap.tileSize);
-    const MAP_Z: number = Math.floor(z / GameMap.tileSize);
-
-    if (GAME_MAP[MAP_Z][MAP_Y][MAP_X] !== 0) {
+    if (
+      Game.instance.gameMap.map
+      [Math.floor(z / GameMap.tileSize)]
+      [Math.floor(y / GameMap.tileSize)]
+      [Math.floor(x / GameMap.tileSize)] !== 0
+    ) {
       return true;
     }
     return false;
@@ -139,14 +169,14 @@ class Player {
 
   public collideWithWall(): boolean {
     const VERTICES: number[][] = [
-      [this._x - this.size / 2, this._y - this.size / 2, this.z - this.size / 2],
-      [this._x - this.size / 2, this._y + this.size / 2, this.z - this.size / 2],
-      [this._x - this.size / 2, this._y + this.size / 2, this.z + this.size / 2],
-      [this._x - this.size / 2, this._y - this.size / 2, this.z + this.size / 2],
-      [this._x + this.size / 2, this._y - this.size / 2, this.z - this.size / 2],
-      [this._x + this.size / 2, this._y + this.size / 2, this.z - this.size / 2],
-      [this._x + this.size / 2, this._y - this.size / 2, this.z + this.size / 2],
-      [this._x + this.size / 2, this._y + this.size / 2, this.z + this.size / 2],
+      [this._x - this.size / 2, this._y - this.size / 2, this._z - this.size / 2],
+      [this._x - this.size / 2, this._y + this.size / 2, this._z - this.size / 2],
+      [this._x - this.size / 2, this._y + this.size / 2, this._z + this.size / 2],
+      [this._x - this.size / 2, this._y - this.size / 2, this._z + this.size / 2],
+      [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size / 2],
+      [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size / 2],
+      [this._x + this.size / 2, this._y - this.size / 2, this._z + this.size / 2],
+      [this._x + this.size / 2, this._y + this.size / 2, this._z + this.size / 2],
     ]
     for (let vertex of VERTICES) {
       if (this.pointInWall(vertex[0], vertex[1], vertex[2])) {
@@ -156,36 +186,78 @@ class Player {
     return false;
   }
 
-  public castVisionRay(yaw: number, pitch: number): number {
-    let currentRayPositionX: number = this.x;
-    let currentRayPositionY: number = this.y;
-    let currentRayPositionZ: number = this.z;
 
-    const RAY_X_VELOCITY = Math.cos(pitch) * Math.cos(yaw);
-    const RAY_Y_VELOCITY = Math.cos(pitch) * Math.sin(yaw);
-    const RAY_Z_VELOCITY = Math.sin(pitch)
+
+  public castVisionRay(yaw: number, pitch: number): number[] {
+    let currentRayPositionX: number = this._x;
+    let currentRayPositionY: number = this._y;
+    let currentRayPositionZ: number = this._z;
+
+    const RAY_VELOCITY_X: number = Math.cos(pitch) * Math.cos(yaw)
+    const RAY_VELOCITY_Y: number = Math.cos(pitch) * Math.sin(yaw)
+    const RAY_VELOCITY_Z: number = Math.sin(pitch)
+
 
     while (true) {
-      // check ray's collision with map tiles (walls)
-
-      //!!!!!!!!!!!!!!! Replace with one liner for performance if necessary
-      const MAP_X = Math.floor(currentRayPositionX / GameMap.tileSize);
-      const MAP_Y = Math.floor(currentRayPositionY / GameMap.tileSize);
-      const MAP_Z = Math.floor(currentRayPositionZ / GameMap.tileSize);
+ 
       // if the ray collided into a wall, return the distance the ray has travelled and the x position of the wall hit (from the left)
-      if (Game.instance.gameMap.map[MAP_Z][MAP_Y][MAP_X] != 0) {
+      if (
+        Game.instance.gameMap.map
+        [Math.floor(currentRayPositionZ / GameMap.tileSize)]
+        [Math.floor(currentRayPositionY / GameMap.tileSize)]
+        [Math.floor(currentRayPositionX / GameMap.tileSize)] === 1
+      ) {
+        let pixelColorCode: number;
 
-        return Math.sqrt(
-          Math.pow(currentRayPositionX - this.x, 2) +
-          Math.pow(currentRayPositionY - this.y, 2) + 
-          Math.pow(currentRayPositionZ - this.z, 2)
-        )
+
+        const RETRACED_X = currentRayPositionX - RAY_VELOCITY_X
+        const RETRACED_Y = currentRayPositionY - RAY_VELOCITY_Y
+
+        if (
+          Game.instance.gameMap.map
+          [Math.floor(currentRayPositionZ / GameMap.tileSize)]
+          [Math.floor(currentRayPositionY / GameMap.tileSize)]
+          [Math.floor(RETRACED_X / GameMap.tileSize)] === 0
+        ) {
+          // the change in x is what made it it, calculate the position hit based on the y and z
+          const HIT_Y: number = currentRayPositionY % GameMap.tileSize
+          const HIT_Z: number = currentRayPositionZ % GameMap.tileSize
+
+          pixelColorCode = GameMap.wallTexture[Math.floor(HIT_Y / GameMap.wallBitSize)][Math.floor(HIT_Z / GameMap.wallBitSize)]
+        } else if (
+          Game.instance.gameMap.map
+          [Math.floor(currentRayPositionZ / GameMap.tileSize)]
+          [Math.floor(RETRACED_Y / GameMap.tileSize)]
+          [Math.floor(currentRayPositionX / GameMap.tileSize)] === 0
+        ) {
+          // the change in y is what made it it, calculate the position hit based on the x and z
+          const HIT_X: number = currentRayPositionX % GameMap.tileSize
+          const HIT_Z: number = currentRayPositionZ % GameMap.tileSize
+
+          pixelColorCode = GameMap.wallTexture[Math.floor(HIT_X / GameMap.wallBitSize)][Math.floor(HIT_Z / GameMap.wallBitSize)]
+        } else {
+          // the change in y is what made it it, calculate the position hit based on the x and z
+          const HIT_X: number = currentRayPositionX % GameMap.tileSize
+          const HIT_Y: number = currentRayPositionY % GameMap.tileSize
+
+          pixelColorCode = GameMap.wallTexture[Math.floor(HIT_X / GameMap.wallBitSize)][Math.floor(HIT_Y / GameMap.wallBitSize)]
+
+        }
+
+        return [
+          Math.sqrt(
+          Math.pow(currentRayPositionX - this._x, 2) +
+          Math.pow(currentRayPositionY - this._y, 2) + 
+          Math.pow(currentRayPositionZ - this._z, 2)
+          ), 
+          pixelColorCode!
+        ]
       }
 
-      // move the ray
-      currentRayPositionX += RAY_X_VELOCITY
-      currentRayPositionY += RAY_Y_VELOCITY
-      currentRayPositionZ += RAY_Z_VELOCITY
+      // move the ray 1 unit in the unit vector's direction
+      currentRayPositionX += RAY_VELOCITY_X
+      currentRayPositionY += RAY_VELOCITY_Y
+      currentRayPositionZ += RAY_VELOCITY_Z
     }
   }
 }

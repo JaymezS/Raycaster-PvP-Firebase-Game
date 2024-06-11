@@ -5,6 +5,7 @@ class PlayerController {
     aKeyPressed = false;
     sKeyPressed = false;
     dKeyPressed = false;
+    spaceKeyPressed = false;
     constructor(player) {
         this.player = player;
         document.addEventListener('keydown', (e) => {
@@ -20,6 +21,9 @@ class PlayerController {
             if (e.key === 's') {
                 this.sKeyPressed = true;
             }
+            if (e.key === " ") {
+                this.spaceKeyPressed = true;
+            }
         });
         document.addEventListener('keyup', (e) => {
             if (e.key === 'd') {
@@ -33,6 +37,9 @@ class PlayerController {
             }
             if (e.key === 's') {
                 this.sKeyPressed = false;
+            }
+            if (e.key === " ") {
+                this.spaceKeyPressed = false;
             }
         });
         document.addEventListener("mousemove", (e) => {
@@ -52,6 +59,9 @@ class PlayerController {
         }
         if (this.sKeyPressed) {
             this.player.moveBackward();
+        }
+        if (this.spaceKeyPressed) {
+            this.player.jump();
         }
     }
 }

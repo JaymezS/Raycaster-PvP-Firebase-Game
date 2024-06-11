@@ -9,8 +9,12 @@ class Game {
     FPS = 60;
     timeInterval = 1000 / this.FPS;
     resolution = 8;
+    gravitationalAccelerationConstant = 2;
+    terminalVelocity = 20;
+    players = [this.player];
     constructor() {
         this.gameLoop = setInterval(() => {
+            this.player.updateVerticalMovementDueToGravity();
             this.controller.updatePlayer();
             this.renderForPlayer(this.player);
         }, this.timeInterval);
@@ -35,11 +39,12 @@ class Game {
                 // const LINE_END_POSITION = Canvas.HEIGHT/2 + WALL_LINE_HEIGHT/2;
                 // custom shading
                 // render the pixel
-                const brightness = Math.min(GameMap.tileSize / (RAW_RAY_DISTANCE), 1);
+                const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
+                const brightness = Math.min(GameMap.tileSize / (RAW_RAY_DISTANCE[0]), 1);
                 Utilities.drawPixel(x, y, `rgb(
-          ${Math.floor(this.gameMap.baseTileColor[0] * brightness)},
-          ${Math.floor(this.gameMap.baseTileColor[1] * brightness)},
-          ${Math.floor(this.gameMap.baseTileColor[2] * brightness)}
+          ${Math.floor(COLOR[0] * brightness)},
+          ${Math.floor(COLOR[1] * brightness)},
+          ${Math.floor(COLOR[2] * brightness)}
           )`);
             }
         }
