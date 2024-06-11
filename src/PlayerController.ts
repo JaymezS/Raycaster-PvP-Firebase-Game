@@ -5,7 +5,30 @@ class PlayerController {
   private dKeyPressed: boolean = false;
   private spaceKeyPressed: boolean = false;
 
+  public updatePlayer() {
+    if (this.dKeyPressed) {
+      this.player.moveRight()
+    }
+    if (this.aKeyPressed) {
+      this.player.moveLeft()
+    }
+    if (this.wKeyPressed) {
+      this.player.moveForward()
+    }
+    if (this.sKeyPressed) {
+      this.player.moveBackward()
+    }
+    if (this.spaceKeyPressed) {
+      this.player.jump();
+    }
+  }
+
+  protected mousePositionX: number = 0;
+  protected mousePositionY: number = 0;
+  private mouseClickCommand: HandleMouseClickCommand | undefined;
+
   constructor(readonly player: Player) {
+    document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
     document.addEventListener('keydown', (e) => {
       if (e.key === 'd') {
         this.dKeyPressed = true;
@@ -49,21 +72,35 @@ class PlayerController {
     })
   }
 
-  public updatePlayer() {
-    if (this.dKeyPressed) {
-      this.player.moveRight()
-    }
-    if (this.aKeyPressed) {
-      this.player.moveLeft()
-    }
-    if (this.wKeyPressed) {
-      this.player.moveForward()
-    }
-    if (this.sKeyPressed) {
-      this.player.moveBackward()
-    }
-    if (this.spaceKeyPressed) {
-      this.player.jump();
+  public assignMouseClickCommand(c: HandleMouseClickCommand) {
+    this.mouseClickCommand = c;
+  }
+
+  private handleMouseClickEvent(event: MouseEvent) {
+    const MOUSE_X: number = event.clientX;
+    const MOUSE_Y: number = event.clientY;
+
+    // where the element "BoundingRect is on the screen"
+    const BoundingRect = Canvas.instance.screen.getBoundingClientRect();
+    const CANVAS_X: number = BoundingRect.x;
+    const CANVAS_Y: number = BoundingRect.y;
+    const MOUSE_POSITION_X: number = MOUSE_X - CANVAS_X;
+    const MOUSE_POSITION_Y: number = MOUSE_Y - CANVAS_Y;
+    this.mousePositionX = MOUSE_POSITION_X;
+    this.mousePositionY = MOUSE_POSITION_Y;
+    if (
+      this.mousePositionY < Canvas.HEIGHT &&
+      this.mousePositionX < Canvas.WIDTH &&
+      this.mousePositionX >= 0 &&
+      this.mousePositionY >= 0
+    ) {
+      if (this.mouseClickCommand === undefined) {
+        throw new Error("no on click command assigned");
+      } else {
+        this.mouseClickCommand
+          .assignCoordinates(this.mousePositionX, this.mousePositionY)
+          .execute();
+      }
     }
   }
 }

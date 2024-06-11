@@ -10,7 +10,7 @@ class Game {
   readonly resolution: number = 8;
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 20
-  readonly maxRenderDistance: number = 8 * GameMap.tileSize;
+  readonly maxRenderDistance: number = 10 * GameMap.tileSize;
 
 
   private test: boolean = false;
@@ -59,7 +59,7 @@ class Game {
         // custom shading
         // render the pixel
         const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
-        const brightness: number = Math.min(Math.pow(GameMap.tileSize / RAW_RAY_DISTANCE[0], 1.5), 0.5) 
+        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.5) 
         Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},
