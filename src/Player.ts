@@ -97,7 +97,7 @@ class Player {
     return false;
   }
 
-  public castVisionRay(angle: number): number {
+  public castVisionRay(angle: number): number[] {
     let currentRayPositionX: number = this.x;
     let currentRayPositionY: number = this.y;
 
@@ -110,11 +110,27 @@ class Player {
     while (true) {
 
       // check ray's collision with map tiles (walls)
-      const mapX = Math.floor(currentRayPositionX / GameMap.tileSize);
-      const mapY = Math.floor(currentRayPositionY / GameMap.tileSize);
-      // if the ray collided into a wall, return the distance the ray has travelled
-      if (Game.instance.gameMap.map[mapY][mapX] === 1) {
-        return Math.sqrt(Math.pow(distanceTravelledX, 2) + Math.pow(distanceTravelledY, 2));
+      const MAP_X = Math.floor(currentRayPositionX / GameMap.tileSize);
+      const MAP_Y = Math.floor(currentRayPositionY / GameMap.tileSize);
+      // if the ray collided into a wall, return the distance the ray has travelled and the x position of the wall hit (from the left)
+      if (Game.instance.gameMap.map[MAP_Y][MAP_X] === 1) {
+        let textureX: number = 0
+        const hitX = (currentRayPositionX - MAP_X * GameMap.tileSize) % GameMap.tileSize;
+        const hitY = (currentRayPositionY - MAP_Y * GameMap.tileSize) % GameMap.tileSize;
+
+        const BACKTRACK_RAY_X: number = currentRayPositionX - RAY_DIRECTION_X
+        const BACKTRACK_MAP_X: number = Math.floor(BACKTRACK_RAY_X / GameMap.tileSize);
+        // if by backtracking x, the ray no longer hits, then x is what made it hit, so it's a collision in the x direction
+        if (Game.instance.gameMap.map[MAP_Y][BACKTRACK_MAP_X] === 0) {
+          textureX = hitY
+        } else {
+          textureX = hitX
+        }
+
+        return [
+          Math.sqrt(Math.pow(distanceTravelledX, 2) + Math.pow(distanceTravelledY, 2)),
+          textureX
+        ];
       }
 
       // move the ray
