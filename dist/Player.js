@@ -9,7 +9,7 @@ class Player {
     _pitch = 0;
     _speed = 3;
     _rotationSpeed = Math.PI / 180;
-    _fov = Math.PI / 4; // Field of view
+    _fov = Math.PI / 3; // Field of view
     grounded = false;
     maxPitch = Math.PI / 2;
     // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);

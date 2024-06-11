@@ -11,6 +11,7 @@ class Game {
     resolution = 8;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
+    test = true;
     players = [this.player];
     constructor() {
         this.gameLoop = setInterval(() => {
@@ -28,6 +29,9 @@ class Game {
             for (let y = 0; y < Canvas.HEIGHT; y += this.resolution) {
                 const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
                 const CURRENT_RAY_PITCH = (player.pitch - player.fov / 4) + (y / Canvas.HEIGHT) * player.fov / 2;
+                if (this.test) {
+                    console.log(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
+                }
                 const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
                 // cos angle = distance to wall (adj) / raw ray distance (hyp)
                 // distance to wall = raw distance * cos angle
@@ -48,6 +52,7 @@ class Game {
           )`);
             }
         }
+        this.test = false;
     }
     static get instance() {
         if (Game._instance === undefined) {

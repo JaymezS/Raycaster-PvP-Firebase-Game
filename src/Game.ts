@@ -11,6 +11,10 @@ class Game {
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 20
 
+
+  private test: boolean = true;
+
+
   private players: Player[] = [this.player]
 
   private constructor() {
@@ -27,11 +31,16 @@ class Game {
 
   public renderForPlayer(player: Player) {
     this.clearScreen()
+    
     for (let x: number = 0; x < Canvas.WIDTH; x += this.resolution) {
       for (let y: number = 0; y < Canvas.HEIGHT; y += this.resolution) {
-         
+
         const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
         const CURRENT_RAY_PITCH = (player.pitch - player.fov / 4) + (y / Canvas.HEIGHT) * player.fov/2;
+
+        if (this.test) {
+          console.log(CURRENT_RAY_YAW, CURRENT_RAY_PITCH)
+        }
 
         const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
 
@@ -57,6 +66,7 @@ class Game {
           )`)
       }
     }
+    this.test = false;
   }
   
   public static get instance(): Game {

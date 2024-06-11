@@ -8,7 +8,7 @@ class Player {
   private _pitch: number = 0;
   private _speed: number = 3
   private _rotationSpeed: number = Math.PI/180
-  private _fov = Math.PI / 4; // Field of view
+  private _fov = Math.PI / 3; // Field of view
 
   private grounded: boolean = false;
 
