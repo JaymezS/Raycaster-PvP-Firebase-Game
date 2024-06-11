@@ -11,56 +11,49 @@ class Game {
     constructor() {
         this.gameLoop = setInterval(() => {
             this.controller.updatePlayer();
-            this.render();
+            this.renderForPlayer(this.player);
         }, this.timeInterval);
     }
     clearScreen() {
         this.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
     }
-    render() {
+    renderForPlayer(player) {
         this.clearScreen();
-        for (let x = 0; x < Canvas.WIDTH; x++) {
-            const rayAngle = (this.player.angle - this.player.fov / 2) + (x / Canvas.WIDTH) * this.player.fov;
-            const ray = this.castRay(rayAngle);
-            const distance = ray.distance * Math.cos(rayAngle - this.player.angle);
-            const lineHeight = (GameMap.tileSize * Canvas.HEIGHT) / distance;
-            const drawStart = -lineHeight / 2 + Canvas.HEIGHT / 2;
-            const drawEnd = lineHeight / 2 + Canvas.HEIGHT / 2;
-            // custom shading
-            const brightness = Math.min(GameMap.tileSize / distance, 1);
-            this.drawLine(x, drawStart, x, drawEnd, `rgb(
+        for (let rayColumn = 0; rayColumn < Canvas.WIDTH; rayColumn++) {
+            const CURRENT_RAY_ANGLE = (player.angle - player.fov / 2) + (rayColumn / Canvas.WIDTH) * player.fov;
+            const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_ANGLE);
+            // cos angle = distance to wall (adj) / raw ray distance (hyp) 
+            // distance to wall = raw distance * cos angle
+            // angle = ray angle - player angle (or vice versa doesn't matter)
+            const CORRECTED_DISTANCE = RAW_RAY_DISTANCE * Math.cos(player.angle - CURRENT_RAY_ANGLE);
+            const WALL_LINE_HEIGHT = GameMap.tileSize / CORRECTED_DISTANCE * Canvas.HEIGHT;
+            const LINE_START_POSITION = Canvas.HEIGHT / 2 - WALL_LINE_HEIGHT / 2;
+            const LINE_END_POSITION = Canvas.HEIGHT / 2 + WALL_LINE_HEIGHT / 2;
+            /*
+            GPT shit code for ceiling, tried to fix
+            const RENDERING_QUALITY: number = 10
+            const LINE_SEGMENT_LENGTH: number = Math.ceil(LINE_START_POSITION / RENDERING_QUALITY);
+            for (let y = 0; y < LINE_START_POSITION; y+= LINE_SEGMENT_LENGTH) {
+              const ceilingDistance = Canvas.HEIGHT / (Canvas.HEIGHT - 2 * y);
+              const brightness = Math.max(0, 1 - ceilingDistance / 10);
+              Utilities.drawLine(rayColumn, y, rayColumn, y+ LINE_SEGMENT_LENGTH,
+                `rgb(
+                ${Math.floor(this.gameMap.ceilingColor[0] * brightness)},
+                ${Math.floor(this.gameMap.ceilingColor[1] * brightness)},
+                ${Math.floor(this.gameMap.ceilingColor[2] * brightness)}
+                )`
+              );
+            }
+            */
+            const brightness = Math.min(GameMap.tileSize / (RAW_RAY_DISTANCE), 1);
+            // custom shading, either use raw distance or distance to wall, either is fine, raw is more realistic
+            // render the wall
+            Utilities.drawLine(rayColumn, LINE_START_POSITION, rayColumn, LINE_END_POSITION, `rgb(
         ${Math.floor(this.gameMap.baseTileColor[0] * brightness)},
         ${Math.floor(this.gameMap.baseTileColor[1] * brightness)},
         ${Math.floor(this.gameMap.baseTileColor[2] * brightness)}
         )`);
-            /**
-             *         `rgb(
-              ${Math.floor(this.gameMap.baseTileColor[0] * brightness)},
-              ${Math.floor(this.gameMap.baseTileColor[1] * brightness)},
-              ${Math.floor(this.gameMap.baseTileColor[2] * brightness)},
-              )`
-             */
         }
-    }
-    castRay(angle) {
-        const rayPos = { x: this.player.x, y: this.player.y };
-        const rayDir = { x: Math.cos(angle), y: Math.sin(angle) };
-        while (true) {
-            const mapX = Math.floor(rayPos.x / GameMap.tileSize);
-            const mapY = Math.floor(rayPos.y / GameMap.tileSize);
-            if (this.gameMap.map[mapY][mapX] === 1) {
-                return { x: rayPos.x, y: rayPos.y, distance: Math.hypot(rayPos.x - this.player.x, rayPos.y - this.player.y) };
-            }
-            rayPos.x += rayDir.x;
-            rayPos.y += rayDir.y;
-        }
-    }
-    drawLine(x1, y1, x2, y2, color) {
-        this.context.strokeStyle = color;
-        this.context.beginPath();
-        this.context.moveTo(x1, y1);
-        this.context.lineTo(x2, y2);
-        this.context.stroke();
     }
     static get instance() {
         if (Game._instance === undefined) {
