@@ -1,10 +1,11 @@
 "use strict";
 class Player {
+    static size = 32;
     // note that x and y are center values
     _x = GameMap.tileSize * 1.5;
     _y = GameMap.tileSize * 1.5;
     _z = GameMap.tileSize * 1.5;
-    size = 32;
+    size = Player.size;
     _yaw = 0;
     _pitch = 0;
     _speed = 3;
@@ -195,6 +196,13 @@ class Player {
                         Math.pow(currentRayPositionZ - this._z, 2)),
                     pixelColorCode
                 ];
+            }
+            else if (Math.sqrt(Math.pow(currentRayPositionX - this._x, 2) +
+                Math.pow(currentRayPositionY - this._y, 2) +
+                Math.pow(currentRayPositionZ - this._z, 2)) > Game.instance.maxRenderDistance) {
+                return [Math.sqrt(Math.pow(currentRayPositionX - this._x, 2) +
+                        Math.pow(currentRayPositionY - this._y, 2) +
+                        Math.pow(currentRayPositionZ - this._z, 2)), Colors.BLACK];
             }
             // move the ray 1 unit in the unit vector's direction
             currentRayPositionX += RAY_VELOCITY_X;

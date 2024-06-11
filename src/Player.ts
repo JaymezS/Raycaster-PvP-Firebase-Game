@@ -1,9 +1,11 @@
 class Player {
+
+  public static size: number = 32
   // note that x and y are center values
   private _x: number = GameMap.tileSize * 1.5
   private _y: number = GameMap.tileSize * 1.5
   private _z: number = GameMap.tileSize * 1.5
-  private size: number = 32
+  private size: number = Player.size
   private _yaw: number = 0;
   private _pitch: number = 0;
   private _speed: number = 3
@@ -256,6 +258,16 @@ class Player {
           ), 
           pixelColorCode!
         ]
+      } else if (
+        Math.sqrt(
+        Math.pow(currentRayPositionX - this._x, 2) +
+        Math.pow(currentRayPositionY - this._y, 2) + 
+        Math.pow(currentRayPositionZ - this._z, 2)) > Game.instance.maxRenderDistance
+      ) {
+        return [Math.sqrt(
+          Math.pow(currentRayPositionX - this._x, 2) +
+          Math.pow(currentRayPositionY - this._y, 2) + 
+          Math.pow(currentRayPositionZ - this._z, 2)), Colors.BLACK]
       }
 
       // move the ray 1 unit in the unit vector's direction

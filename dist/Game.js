@@ -11,7 +11,8 @@ class Game {
     resolution = 8;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
-    test = true;
+    maxRenderDistance = 8 * GameMap.tileSize;
+    test = false;
     players = [this.player];
     constructor() {
         this.gameLoop = setInterval(() => {
@@ -44,7 +45,7 @@ class Game {
                 // custom shading
                 // render the pixel
                 const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
-                const brightness = Math.min(GameMap.tileSize / (RAW_RAY_DISTANCE[0]), 1);
+                const brightness = Math.min(Math.pow(GameMap.tileSize / RAW_RAY_DISTANCE[0], 1.5), 0.5);
                 Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},
