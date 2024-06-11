@@ -267,7 +267,7 @@ class Player {
         return [Math.sqrt(
           Math.pow(currentRayPositionX - this._x, 2) +
           Math.pow(currentRayPositionY - this._y, 2) + 
-          Math.pow(currentRayPositionZ - this._z, 2)), Colors.BLACK]
+          Math.pow(currentRayPositionZ - this._z, 2)), Colors.GRAY]
       }
 
       // move the ray 1 unit in the unit vector's direction

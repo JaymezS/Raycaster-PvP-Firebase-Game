@@ -1,9 +1,10 @@
 
-const PIXEL_COLORS: number[][] = [[0, 255, 255], [0, 255, 0], [0, 0, 0]]
+const PIXEL_COLORS: number[][] = [[0, 255, 255], [0, 255, 0], [0, 0, 0], [200, 200, 200]]
 enum Colors {
   AQUA = 0,
   GREEN = 1,
-  BLACK = 2
+  BLACK = 2,
+  GRAY = 3
 }
 
 class GameMap {

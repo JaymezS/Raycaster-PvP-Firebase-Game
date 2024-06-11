@@ -1,10 +1,11 @@
 "use strict";
-const PIXEL_COLORS = [[0, 255, 255], [0, 255, 0], [0, 0, 0]];
+const PIXEL_COLORS = [[0, 255, 255], [0, 255, 0], [0, 0, 0], [200, 200, 200]];
 var Colors;
 (function (Colors) {
     Colors[Colors["AQUA"] = 0] = "AQUA";
     Colors[Colors["GREEN"] = 1] = "GREEN";
     Colors[Colors["BLACK"] = 2] = "BLACK";
+    Colors[Colors["GRAY"] = 3] = "GRAY";
 })(Colors || (Colors = {}));
 class GameMap {
     static tileSize = 64;
