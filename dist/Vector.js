@@ -1,14 +1,34 @@
 class VectorMath {
-    static convertVectorToUnitVector(x, y, z) {
-        const MAGNITUDE = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-        return [x / MAGNITUDE, y / MAGNITUDE, z / MAGNITUDE];
+    static getMagnitude(v) {
+        return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2) + Math.pow(v[2], 2));
     }
-    static convertYawAndPitchToUnitVector(yaw, pitch) {
-        const Z_MAGNITUDE = Math.sin(pitch);
-        const HORIZONTAL_MAGNITUDE = Math.cos(pitch);
-        const X_MAGNITUDE = Math.cos(yaw) * HORIZONTAL_MAGNITUDE;
-        const Y_MAGNITUDE = Math.sin(yaw) * HORIZONTAL_MAGNITUDE;
+    static convertVectorToUnitVector(v) {
+        const MAG = VectorMath.getMagnitude(v);
+        return [v[0] / MAG, v[1] / MAG, v[2] / MAG];
+    }
+    static convertYawAndPitchToUnitVector(angles) {
+        const Z_MAGNITUDE = Math.sin(angles[1]);
+        const HORIZONTAL_MAGNITUDE = Math.cos(angles[1]);
+        const X_MAGNITUDE = Math.cos(angles[0]) * HORIZONTAL_MAGNITUDE;
+        const Y_MAGNITUDE = Math.sin(angles[0]) * HORIZONTAL_MAGNITUDE;
         return [X_MAGNITUDE, Y_MAGNITUDE, Z_MAGNITUDE];
+    }
+    static convertVectorToYawAndPitch(v) {
+        let yaw;
+        let pitch;
+        const HORIZONTAL_MAGNITUDE = Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2));
+        pitch = Math.atan(v[2] / HORIZONTAL_MAGNITUDE);
+        yaw = Math.atan(v[1] / v[0]);
+        return [yaw, pitch];
+    }
+    static addVectors(v1, v2) {
+        return [v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]];
+    }
+    static vectorFrom1to2(p1, p2) {
+        return [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+    }
+    static convertUnitVectorToVector(uv, magnitude) {
+        return [uv[0] * magnitude, uv[1] * magnitude, uv[2] * magnitude];
     }
 }
 export { VectorMath };

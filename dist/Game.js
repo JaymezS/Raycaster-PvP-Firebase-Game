@@ -10,6 +10,7 @@ import { ref, onValue,
 //@ts-ignore Import module
  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
+import { VectorMath } from "./Vector.js";
 class Game {
     static _instance;
     player = new Player();
@@ -32,18 +33,8 @@ class Game {
             new RemoveClientPlayerFromDatabaseCommand().execute();
         });
     }
-    test() {
-        let previousAngle2 = 0;
-        for (let distance = 10; distance < Canvas.WIDTH; distance += 10) {
-            const NEW_ANGLE1 = Utilities.calculateAngleFromLeftOfCone(Math.PI / 3, Canvas.WIDTH, distance);
-            const NEW_ANGLE1DIFF = NEW_ANGLE1 - previousAngle2;
-            previousAngle2 = NEW_ANGLE1;
-            console.log(NEW_ANGLE1);
-        }
-    }
     start() {
         new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();
-        this.test();
     }
     updateFromDatabase() {
         onValue(ref(FirebaseClient.instance.db, "/players"), (snapshot) => {
@@ -76,6 +67,9 @@ class Game {
     renderForPlayer() {
         this.clearScreen();
         const TIME = performance.now();
+        const ADJACENT_LENGTH_MAGNITUDE = (Canvas.WIDTH / 2) / Math.tan(this.player.fov / 2);
+        const PLAYER_TO_VIEWPORT_UNIT_VECTOR = VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch]);
+        const PLAYER_TO_VIEWPORT_VECTOR = VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE);
         for (let x = 0; x < Canvas.WIDTH; x += this.resolution) {
             // default ray cast
             // const CURRENT_RAY_YAW = (this.player.yaw - this.player.fov / 2) +
@@ -99,6 +93,10 @@ class Game {
                 // Note that this does nothing right now
                 let rayAnglePitch = Utilities.calculateAngleFromLeftOfCone(VERTICAL_FOV, Canvas.HEIGHT, y);
                 rayAnglePitch = (this.player.pitch + VERTICAL_FOV / 2) - rayAnglePitch;
+                let centerOfViewportToPointVector;
+                let vectorFromPlayerToPoint = VectorMath.addVectors(PLAYER_TO_VIEWPORT_VECTOR, centerOfViewportToPointVector);
+                let rayAngles = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint);
+                // replace with angles[0] and angles[1] later
                 const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngleYaw, rayAnglePitch);
                 // custom shading
                 // render the pixel

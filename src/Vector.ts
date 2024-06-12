@@ -1,16 +1,44 @@
 class VectorMath {
-  public static convertVectorToUnitVector(x: number, y: number, z: number): number[] {
-    const MAGNITUDE: number = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2))
-    return [x / MAGNITUDE, y / MAGNITUDE, z / MAGNITUDE];
+
+  public static getMagnitude(v: number[]): number {
+    return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2) + Math.pow(v[2], 2))
   }
 
 
-  public static convertYawAndPitchToUnitVector(yaw: number, pitch: number): number[] {
-    const Z_MAGNITUDE: number = Math.sin(pitch);
-    const HORIZONTAL_MAGNITUDE: number = Math.cos(pitch);
-    const X_MAGNITUDE: number = Math.cos(yaw) * HORIZONTAL_MAGNITUDE
-    const Y_MAGNITUDE: number = Math.sin(yaw) * HORIZONTAL_MAGNITUDE
+  public static convertVectorToUnitVector(v: number[]): number[] {
+    const MAG: number = VectorMath.getMagnitude(v)
+    return [v[0] / MAG, v[1] / MAG, v[2] / MAG];
+  }
+
+
+  public static convertYawAndPitchToUnitVector(angles: number[]): number[] {
+    const Z_MAGNITUDE: number = Math.sin(angles[1]);
+    const HORIZONTAL_MAGNITUDE: number = Math.cos(angles[1]);
+    const X_MAGNITUDE: number = Math.cos(angles[0]) * HORIZONTAL_MAGNITUDE
+    const Y_MAGNITUDE: number = Math.sin(angles[0]) * HORIZONTAL_MAGNITUDE
     return [X_MAGNITUDE, Y_MAGNITUDE, Z_MAGNITUDE]
+  }
+
+  public static convertVectorToYawAndPitch(v: number[]): number[] {
+    let yaw: number;
+    let pitch: number;
+    const HORIZONTAL_MAGNITUDE: number = Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2))
+    pitch = Math.atan(v[2] / HORIZONTAL_MAGNITUDE)
+    
+    yaw = Math.atan(v[1] / v[0])
+    return [yaw, pitch];
+  }
+
+  public static addVectors(v1: number[], v2: number[]) {
+    return [v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]];
+  }
+
+  public static vectorFrom1to2(p1: number[], p2: number[]) {
+    return [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+  }
+
+  public static convertUnitVectorToVector(uv: number[], magnitude: number): number[] {
+    return [uv[0] * magnitude, uv[1] * magnitude, uv[2] * magnitude]
   }
 }
 
