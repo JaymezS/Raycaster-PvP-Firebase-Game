@@ -7,7 +7,6 @@ import { GameMap } from "./Map.js";
 import { CompositeMenu, MenuButton } from "./Menu.js";
 import { PIXEL_COLORS } from "./Map.js";
 import {
-  set,
   ref,
   onValue,
   //@ts-ignore Import module
