@@ -41,8 +41,25 @@ class Game {
       });
   }
 
+
+  public test() {
+
+    let previousAngle2 = 0;
+
+    for (let distance: number = 10; distance < Canvas.WIDTH; distance += 10) {
+      const NEW_ANGLE1: number = Utilities.calculateAngleFromLeftOfCone(
+        Math.PI/3, Canvas.WIDTH, distance
+      )
+      const NEW_ANGLE1DIFF = NEW_ANGLE1 - previousAngle2
+      previousAngle2 = NEW_ANGLE1
+      console.log(NEW_ANGLE1)
+    }
+  }
+
+
   public start() {
     new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute()
+    this.test()
   }
 
   public updateFromDatabase(): void {
@@ -95,32 +112,34 @@ class Game {
     
     for (let x: number = 0; x < Canvas.WIDTH; x += this.resolution) {
       // default ray cast
-      const CURRENT_RAY_YAW = (this.player.yaw - this.player.fov / 2) + (x / Canvas.WIDTH) * this.player.fov;
-
-
-
+      // const CURRENT_RAY_YAW = (this.player.yaw - this.player.fov / 2) +
+      //   (x / Canvas.WIDTH) * this.player.fov;
 
       // attempted fix to gradient
-
       let rayAngleYaw: number = Utilities.calculateAngleFromLeftOfCone(
         this.player.fov, Canvas.WIDTH, x
       )
       rayAngleYaw += (this.player.yaw - this.player.fov / 2)
 
 
+      const TEST: number = Utilities.randInt(0, 1000000)
+
 
       for (let y: number = 0; y < Canvas.HEIGHT; y += this.resolution) {
         const VERTICAL_FOV: number = Canvas.HEIGHT/Canvas.WIDTH * this.player.fov
-
         // old ray pitch
-        const CURRENT_RAY_PITCH = (this.player.pitch + this.player.fov / 4) - (y / Canvas.HEIGHT) * this.player.fov / 2
-        
+        // const CURRENT_RAY_PITCH = (this.player.pitch + VERTICAL_FOV / 2) -
+        //   (y / Canvas.HEIGHT) * VERTICAL_FOV
 
         // attempted fix to gradient
         // Note that this does nothing right now
+
         let rayAnglePitch: number = Utilities.calculateAngleFromLeftOfCone(
           VERTICAL_FOV, Canvas.HEIGHT, y
         )
+        if (TEST < 2) {
+          console.log(rayAnglePitch)
+        }
         rayAnglePitch = (this.player.pitch + VERTICAL_FOV / 2) - rayAnglePitch
         
 
@@ -130,13 +149,6 @@ class Game {
         // distance to wall = raw distance * cos angle
         // angle = ray angle - player angle (or vice versa doesn't matter)
         
-        // old calculations and corrections for 2d raycast
-        // const CORRECTED_DISTANCE = RAW_RAY_RESULTS[0] * Math.cos(player.angle - CURRENT_RAY_ANGLE);
-        // const WALL_LINE_HEIGHT = GameMap.tileSize / CORRECTED_DISTANCE * Canvas.HEIGHT;
-        // const LINE_START_POSITION = Canvas.HEIGHT/2 - WALL_LINE_HEIGHT/2;
-        // const LINE_END_POSITION = Canvas.HEIGHT/2 + WALL_LINE_HEIGHT/2;
-
-
         // custom shading
         // render the pixel
         const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
