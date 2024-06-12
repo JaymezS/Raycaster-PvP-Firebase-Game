@@ -5,11 +5,11 @@ import { GameMap, Colors, PIXEL_COLORS } from "./Map.js";
 import { nanoid } from "https://cdnjs.cloudflare.com/ajax/libs/nanoid/3.3.4/nanoid.min.js";
 import { Utilities } from "./Utilities.js";
 class Player {
-    static size = 32;
+    static size = 56;
     // note that x and y are center values
     _x = GameMap.tileSize * 1.5;
     _y = GameMap.tileSize * 1.5;
-    _z = GameMap.tileSize * 1.5;
+    _z = GameMap.tileSize * 2;
     size = Player.size;
     _yaw = 0;
     _pitch = 0;
@@ -164,14 +164,14 @@ class Player {
     }
     collideWithWall() {
         const VERTICES = [
-            [this._x - this.size / 2, this._y - this.size / 2, this._z],
-            [this._x - this.size / 2, this._y + this.size / 2, this._z],
+            [this._x + this.size / 2, this._y - this.size / 2, this._z],
+            [this._x + this.size / 2, this._y + this.size / 2, this._z],
             [this._x - this.size / 2, this._y + this.size / 2, this._z],
             [this._x - this.size / 2, this._y - this.size / 2, this._z],
             [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size],
             [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size],
-            [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size],
-            [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size],
+            [this._x - this.size / 2, this._y - this.size / 2, this._z - this.size],
+            [this._x - this.size / 2, this._y + this.size / 2, this._z - this.size],
         ];
         for (let vertex of VERTICES) {
             if (this.pointInWall(vertex[0], vertex[1], vertex[2])) {
@@ -197,6 +197,7 @@ class Player {
         // cheap way to increase performance by increasing the ray cast speed, it does reduce accuracy of render tho
         // 4-5 is the limit, any higher and graphics will be completely innaccurate
         // remove this method later, try  to use castBlockVisionRay2 if possible
+        // higher # = more innaccurate graphics
         const RAY_SPEED = 5;
         let currentRayPositionX = this._x;
         let currentRayPositionY = this._y;

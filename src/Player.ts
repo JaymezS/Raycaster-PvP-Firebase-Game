@@ -7,11 +7,11 @@ import { Utilities } from "./Utilities.js";
 
 class Player {
 
-  public static size: number = 32
+  public static size: number = 56
   // note that x and y are center values
   private _x: number = GameMap.tileSize * 1.5
   private _y: number = GameMap.tileSize * 1.5
-  private _z: number = GameMap.tileSize * 1.5
+  private _z: number = GameMap.tileSize * 2
   private size: number = Player.size
   private _yaw: number = 0;
   private _pitch: number = 0;
@@ -205,14 +205,14 @@ class Player {
 
   public collideWithWall(): boolean {
     const VERTICES: number[][] = [
-      [this._x - this.size / 2, this._y - this.size / 2, this._z],
-      [this._x - this.size / 2, this._y + this.size / 2, this._z],
+      [this._x + this.size / 2, this._y - this.size / 2, this._z],
+      [this._x + this.size / 2, this._y + this.size / 2, this._z],
       [this._x - this.size / 2, this._y + this.size / 2, this._z],
       [this._x - this.size / 2, this._y - this.size / 2, this._z],
       [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size],
       [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size],
-      [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size],
-      [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size],
+      [this._x - this.size / 2, this._y - this.size / 2, this._z - this.size],
+      [this._x - this.size / 2, this._y + this.size / 2, this._z - this.size],
     ]
     for (let vertex of VERTICES) {
       if (this.pointInWall(vertex[0], vertex[1], vertex[2])) {
@@ -247,6 +247,7 @@ class Player {
     // cheap way to increase performance by increasing the ray cast speed, it does reduce accuracy of render tho
     // 4-5 is the limit, any higher and graphics will be completely innaccurate
     // remove this method later, try  to use castBlockVisionRay2 if possible
+    // higher # = more innaccurate graphics
     const RAY_SPEED: number = 5;
 
     let currentRayPositionX: number = this._x;
