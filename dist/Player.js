@@ -15,7 +15,7 @@ class Player {
     _pitch = 0;
     _speed = 3;
     _rotationSpeed = Math.PI / 180;
-    _fov = Math.PI / 3; // Field of view
+    _fov = Math.PI / 2; // Field of view
     colorCode = Utilities.randInt(0, PIXEL_COLORS.length);
     id = nanoid(20);
     grounded = false;

@@ -82,6 +82,7 @@ class Game {
             PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR =
                 VectorMath.convertYawAndPitchToUnitVector([Math.PI + this.player.yaw, -(Math.PI / 2 + this.player.pitch)]);
         }
+        // bruh opposite direction != -1 * yaw, was stuck for 2 hours
         let playerToViewportTopLeftVector = VectorMath.addVectors(PLAYER_TO_VIEWPORT_CENTER_VECTOR, VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, -Canvas.WIDTH / 2));
         playerToViewportTopLeftVector = VectorMath.addVectors(playerToViewportTopLeftVector, VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, -Canvas.HEIGHT / 2));
         for (let x = 0; x < Canvas.WIDTH; x += this.resolution) {

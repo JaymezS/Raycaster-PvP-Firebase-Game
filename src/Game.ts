@@ -114,6 +114,7 @@ class Game {
       PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR =
         VectorMath.convertYawAndPitchToUnitVector([Math.PI + this.player.yaw, -(Math.PI / 2 + this.player.pitch)]);
     }
+    // bruh opposite direction != -1 * yaw, was stuck for 2 hours
 
     let playerToViewportTopLeftVector: number[] = VectorMath.addVectors(
       PLAYER_TO_VIEWPORT_CENTER_VECTOR,
