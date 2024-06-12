@@ -25,7 +25,19 @@ class VectorMath {
     const HORIZONTAL_MAGNITUDE: number = Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2))
     pitch = Math.atan(v[2] / HORIZONTAL_MAGNITUDE)
     
-    yaw = Math.atan(v[1] / v[0])
+    if (v[1] >= 0) {
+      if (v[0] >= 0) {
+        yaw = Math.atan(v[1] / v[0])
+      } else {
+        yaw = Math.PI - Math.atan(v[1] / Math.abs(v[0]))
+      }
+    } else {
+      if (v[0] >= 0) {
+        yaw = -(Math.atan(Math.abs(v[1]) / v[0]))
+      } else {
+        yaw = -(Math.PI - Math.atan(Math.abs(v[1]) / Math.abs(v[0])))
+      }
+    }
     return [yaw, pitch];
   }
 
@@ -39,6 +51,11 @@ class VectorMath {
 
   public static convertUnitVectorToVector(uv: number[], magnitude: number): number[] {
     return [uv[0] * magnitude, uv[1] * magnitude, uv[2] * magnitude]
+  }
+
+
+  public static scalarMultiply(v: number[], s: number): number[] {
+    return [v[0] * s, v[1] * s, v[2] * s]
   }
 }
 

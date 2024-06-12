@@ -95,10 +95,35 @@ class Game {
     const TIME: number = performance.now()
 
     const ADJACENT_LENGTH_MAGNITUDE: number = (Canvas.WIDTH / 2) / Math.tan(this.player.fov / 2)
-    const PLAYER_TO_VIEWPORT_UNIT_VECTOR: number[] =
+    const PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR: number[] =
       VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch])
-    const PLAYER_TO_VIEWPORT_VECTOR: number[] =
-      VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE)
+    const PLAYER_TO_VIEWPORT_CENTER_VECTOR: number[] =
+      VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE)
+    
+    // 1 unit vector from the left of the view port to the right
+    const PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR: number[] = 
+      VectorMath.convertYawAndPitchToUnitVector([this.player.yaw + Math.PI / 2, 0])
+    
+    // 1 unit vector from the top of the viewport to the bottom
+    let PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR: number[]
+    
+    if (this.player.pitch >= 0) {
+      PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR =
+        VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch - Math.PI / 2]);
+    } else {
+      PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR =
+        VectorMath.convertYawAndPitchToUnitVector([-this.player.yaw, this.player.pitch - Math.PI / 2]);
+    }
+
+    let playerToViewportTopLeftVector: number[] = VectorMath.addVectors(
+      PLAYER_TO_VIEWPORT_CENTER_VECTOR,
+      VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, -Canvas.WIDTH/2)
+    )
+    playerToViewportTopLeftVector = VectorMath.addVectors(
+      playerToViewportTopLeftVector,
+      VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, -Canvas.HEIGHT/2)
+    )
+
     
     for (let x: number = 0; x < Canvas.WIDTH; x += this.resolution) {
       // default ray cast
@@ -106,9 +131,9 @@ class Game {
       //   (x / Canvas.WIDTH) * this.player.fov;
 
       // attempted fix to gradient
-      let rayAngleYaw: number = Utilities.calculateAngleFromLeftOfCone(
-        this.player.fov, Canvas.WIDTH, x
-      )
+      // let rayAngleYaw: number = Utilities.calculateAngleFromLeftOfCone(
+      //   this.player.fov, Canvas.WIDTH, x
+      // )
 
       // problem lies in this line, should not add, but use a formula to combine the two
       // ie imagine the player is looking up, the player's viewport is a plane not paralle to any axial planes
@@ -120,10 +145,9 @@ class Game {
       // note that conversion must first be done to incoporate Canvas size as a part of the viewport plane.
       
       // with this fix, x and y would not be seperate, each pair of x and y will generate a unique resultant vector, and thereby a unique pitch and yaw
-      rayAngleYaw += (this.player.yaw - this.player.fov / 2)
+      // rayAngleYaw += (this.player.yaw - this.player.fov / 2)
 
       for (let y: number = 0; y < Canvas.HEIGHT; y += this.resolution) {
-        const VERTICAL_FOV: number = Canvas.HEIGHT/Canvas.WIDTH * this.player.fov
         // old ray pitch
         // const CURRENT_RAY_PITCH = (this.player.pitch + VERTICAL_FOV / 2) -
         //   (y / Canvas.HEIGHT) * VERTICAL_FOV
@@ -131,19 +155,23 @@ class Game {
         // attempted fix to gradient
         // Note that this does nothing right now
 
-        let rayAnglePitch: number = Utilities.calculateAngleFromLeftOfCone(
-          VERTICAL_FOV, Canvas.HEIGHT, y
-        )
-        rayAnglePitch = (this.player.pitch + VERTICAL_FOV / 2) - rayAnglePitch
+        // let rayAnglePitch: number = Utilities.calculateAngleFromLeftOfCone(
+        //   VERTICAL_FOV, Canvas.HEIGHT, y
+        // )
+        // rayAnglePitch = (this.player.pitch + VERTICAL_FOV / 2) - rayAnglePitch
         
 
 
-        let centerOfViewportToPointVector: number[];
-        let vectorFromPlayerToPoint: number[] = VectorMath.addVectors(PLAYER_TO_VIEWPORT_VECTOR, centerOfViewportToPointVector)
+        let viewportTopLeftToPointVector: number[] =
+          VectorMath.addVectors(
+            VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, x),
+            VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, y)
+          );
+        let vectorFromPlayerToPoint: number[] = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector)
         let rayAngles: number[] = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint)
 
         // replace with angles[0] and angles[1] later
-        const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngleYaw, rayAnglePitch);
+        const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngles[0], rayAngles[1]);
         
         // custom shading
         // render the pixel
