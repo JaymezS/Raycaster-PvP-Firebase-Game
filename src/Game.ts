@@ -7,9 +7,7 @@ import { GameMap } from "./Map.js";
 import { CompositeMenu, MenuButton } from "./Menu.js";
 import { PIXEL_COLORS } from "./Map.js";
 import {
-  update,
   set,
-  onDisconnect,
   ref,
   onValue,
   //@ts-ignore Import module
@@ -33,16 +31,15 @@ class Game {
   
   private mainMenu: CompositeMenu = new CompositeMenu("main menu")
 
-  public players = {
-
-  }
+  public players = {}
 
   private constructor() {
     this.composeMainMenu()
 
-    onDisconnect(
-      set(ref(FirebaseClient.instance.db, "/players"), this.players)
-    );
+    window.addEventListener("beforeunload", function (e) {
+      Game.instance.endGame()
+        set(ref(FirebaseClient.instance.db, "/players"), Game.instance.players)
+      });
   }
 
   public start() {

@@ -6,7 +6,7 @@ import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
 import { CompositeMenu, MenuButton } from "./Menu.js";
 import { PIXEL_COLORS } from "./Map.js";
-import { set, onDisconnect, ref, onValue,
+import { set, ref, onValue,
 //@ts-ignore Import module
  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
@@ -27,7 +27,10 @@ class Game {
     players = {};
     constructor() {
         this.composeMainMenu();
-        onDisconnect(set(ref(FirebaseClient.instance.db, "/players"), this.players));
+        window.addEventListener("beforeunload", function (e) {
+            Game.instance.endGame();
+            set(ref(FirebaseClient.instance.db, "/players"), Game.instance.players);
+        });
     }
     start() {
         new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();
