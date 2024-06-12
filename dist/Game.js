@@ -83,7 +83,6 @@ class Game {
             // attempted fix to gradient
             let rayAngleYaw = Utilities.calculateAngleFromLeftOfCone(this.player.fov, Canvas.WIDTH, x);
             rayAngleYaw += (this.player.yaw - this.player.fov / 2);
-            const TEST = Utilities.randInt(0, 1000000);
             for (let y = 0; y < Canvas.HEIGHT; y += this.resolution) {
                 const VERTICAL_FOV = Canvas.HEIGHT / Canvas.WIDTH * this.player.fov;
                 // old ray pitch
@@ -92,14 +91,8 @@ class Game {
                 // attempted fix to gradient
                 // Note that this does nothing right now
                 let rayAnglePitch = Utilities.calculateAngleFromLeftOfCone(VERTICAL_FOV, Canvas.HEIGHT, y);
-                if (TEST < 2) {
-                    console.log(rayAnglePitch);
-                }
                 rayAnglePitch = (this.player.pitch + VERTICAL_FOV / 2) - rayAnglePitch;
                 const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngleYaw, rayAnglePitch);
-                // cos angle = distance to wall (adj) / raw ray distance (hyp)
-                // distance to wall = raw distance * cos angle
-                // angle = ray angle - player angle (or vice versa doesn't matter)
                 // custom shading
                 // render the pixel
                 const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
