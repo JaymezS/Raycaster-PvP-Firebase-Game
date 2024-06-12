@@ -82,6 +82,13 @@ class Game {
             //   (x / Canvas.WIDTH) * this.player.fov;
             // attempted fix to gradient
             let rayAngleYaw = Utilities.calculateAngleFromLeftOfCone(this.player.fov, Canvas.WIDTH, x);
+            // problem lies in this line, should not add, but use a formula to combine the two
+            // ie imagine the player is looking up, the player's viewport is a plane not paralle to any axial planes
+            // therefore, when viewed from above, the player's viewport's vertices have different yaws
+            // 
+            // fix: since player's angle can be expressed as a vector, do that, then for every pixel, express it as a vector from the center of the viewport plane, then perform vector addition, and convert the resultant back to yaw and pitch
+            // note that conversion must first be done to incoporate Canvas size as a part of the viewport plane.
+            // with this fix, x and y would not be seperate, each pair of x and y will generate a unique resultant vector, and thereby a unique pitch and yaw
             rayAngleYaw += (this.player.yaw - this.player.fov / 2);
             for (let y = 0; y < Canvas.HEIGHT; y += this.resolution) {
                 const VERTICAL_FOV = Canvas.HEIGHT / Canvas.WIDTH * this.player.fov;
