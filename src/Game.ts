@@ -1,6 +1,6 @@
 import { PlayerController } from "./PlayerController.js";
 import { Canvas } from "./Canvas.js";
-import { ClearAllPlayersFromDatabaseCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand } from "./Command.js";
+import { DisplayMenuAndSetMouseControllerCommand, RemoveClientPlayerFromDatabaseCommand, StartGameCommand } from "./Command.js";
 import { Utilities } from "./Utilities.js";
 import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
@@ -31,14 +31,14 @@ class Game {
   
   private mainMenu: CompositeMenu = new CompositeMenu("main menu")
 
-  public players = {}
+  public otherPlayers = {}
 
   private constructor() {
     this.composeMainMenu()
 
     window.addEventListener("beforeunload", function (e) {
       Game.instance.endGame()
-        set(ref(FirebaseClient.instance.db, "/players"), Game.instance.players)
+      new RemoveClientPlayerFromDatabaseCommand().execute()
       });
   }
 
@@ -51,10 +51,10 @@ class Game {
       ref(FirebaseClient.instance.db, "/players"),
       (snapshot) => {
         if (snapshot.val()) {
-          this.players = snapshot.val();
+          this.otherPlayers = snapshot.val();
 
           //Remove the player, but keep all the other users
-          delete this.players[this.player.id];
+          delete this.otherPlayers[this.player.id];
         }
       },
       { onlyOnce: true }

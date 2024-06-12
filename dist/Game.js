@@ -1,12 +1,12 @@
 import { PlayerController } from "./PlayerController.js";
 import { Canvas } from "./Canvas.js";
-import { DisplayMenuAndSetMouseControllerCommand, StartGameCommand } from "./Command.js";
+import { DisplayMenuAndSetMouseControllerCommand, RemoveClientPlayerFromDatabaseCommand, StartGameCommand } from "./Command.js";
 import { Utilities } from "./Utilities.js";
 import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
 import { CompositeMenu, MenuButton } from "./Menu.js";
 import { PIXEL_COLORS } from "./Map.js";
-import { set, ref, onValue,
+import { ref, onValue,
 //@ts-ignore Import module
  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
@@ -24,12 +24,12 @@ class Game {
     terminalVelocity = 20;
     maxRenderDistance = 8 * GameMap.tileSize;
     mainMenu = new CompositeMenu("main menu");
-    players = {};
+    otherPlayers = {};
     constructor() {
         this.composeMainMenu();
         window.addEventListener("beforeunload", function (e) {
             Game.instance.endGame();
-            set(ref(FirebaseClient.instance.db, "/players"), Game.instance.players);
+            new RemoveClientPlayerFromDatabaseCommand().execute();
         });
     }
     start() {
@@ -38,9 +38,9 @@ class Game {
     updateFromDatabase() {
         onValue(ref(FirebaseClient.instance.db, "/players"), (snapshot) => {
             if (snapshot.val()) {
-                this.players = snapshot.val();
+                this.otherPlayers = snapshot.val();
                 //Remove the player, but keep all the other users
-                delete this.players[this.player.id];
+                delete this.otherPlayers[this.player.id];
             }
         }, { onlyOnce: true });
     }

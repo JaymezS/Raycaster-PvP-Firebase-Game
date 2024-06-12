@@ -257,7 +257,7 @@ class Player {
     const RAY_VELOCITY_Y: number = RAY_SPEED * Math.cos(pitch) * Math.sin(yaw)
     const RAY_VELOCITY_Z: number = RAY_SPEED * Math.sin(pitch)
 
-    const CHARACTERS_POSITIONS: {x: number, y: number, z: number, color: number}[] = Object.values(Game.instance.players)
+    const CHARACTERS_POSITIONS: {x: number, y: number, z: number, color: number}[] = Object.values(Game.instance.otherPlayers)
 
     while (true) {
 

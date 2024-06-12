@@ -204,7 +204,7 @@ class Player {
         const RAY_VELOCITY_X = RAY_SPEED * Math.cos(pitch) * Math.cos(yaw);
         const RAY_VELOCITY_Y = RAY_SPEED * Math.cos(pitch) * Math.sin(yaw);
         const RAY_VELOCITY_Z = RAY_SPEED * Math.sin(pitch);
-        const CHARACTERS_POSITIONS = Object.values(Game.instance.players);
+        const CHARACTERS_POSITIONS = Object.values(Game.instance.otherPlayers);
         while (true) {
             let rayhitCharacter = false;
             let hitColor = undefined;

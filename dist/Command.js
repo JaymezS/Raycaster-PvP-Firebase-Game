@@ -98,5 +98,10 @@ class ClearAllPlayersFromDatabaseCommand {
         set(ref(FirebaseClient.instance.db, `/players`), {});
     }
 }
-export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand, ClearAllPlayersFromDatabaseCommand };
+class RemoveClientPlayerFromDatabaseCommand {
+    execute() {
+        set(ref(FirebaseClient.instance.db, `/players`), Game.instance.otherPlayers);
+    }
+}
+export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand, ClearAllPlayersFromDatabaseCommand, RemoveClientPlayerFromDatabaseCommand };
 //# sourceMappingURL=Command.js.map

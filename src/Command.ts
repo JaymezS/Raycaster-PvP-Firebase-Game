@@ -133,6 +133,13 @@ class ClearAllPlayersFromDatabaseCommand implements Command {
 }
 
 
+class RemoveClientPlayerFromDatabaseCommand implements Command {
+  public execute(): void {
+    set(ref(FirebaseClient.instance.db, `/players`), Game.instance.otherPlayers)
+  }
+}
+
+
 export {
   Command,
   HandleMouseClickCommand,
@@ -143,5 +150,6 @@ export {
   MenuMouseClickedEventHandlerCommand,
   MainGameMouseClickedEventHandlerCommand,
   UpdatePlayerPositionToFirebaseCommand,
-  ClearAllPlayersFromDatabaseCommand
+  ClearAllPlayersFromDatabaseCommand, 
+  RemoveClientPlayerFromDatabaseCommand
 }
