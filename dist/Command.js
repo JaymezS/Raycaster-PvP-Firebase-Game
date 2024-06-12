@@ -1,4 +1,8 @@
-"use strict";
+import { Game } from "./Game.js";
+import { update, ref,
+//@ts-ignore Import module
+ } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { FirebaseClient } from "./FirebaseClient.js";
 class HandleMouseClickCommand {
     mousePositionX = 0;
     mousePositionY = 0;
@@ -31,8 +35,8 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
 class StartGameCommand {
     execute() {
         Game.instance.startGame();
-        Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand);
-        Game.instance.controller.assignMouseClickCommand(undefined);
+        Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand());
+        Game.instance.controller.assignMouseClickCommand(new MainGameMouseClickCommand());
     }
 }
 class DisplayMenuAndSetMouseControllerCommand {
@@ -56,8 +60,38 @@ class HandleMouseMoveCommand {
 }
 class MainGameHandleMouseMoveCommand extends HandleMouseMoveCommand {
     execute() {
-        Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed);
+        Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed * -1);
         Game.instance.player.rotateYaw(this.dx * Game.instance.player.rotationSpeed);
     }
 }
+class UpdatePlayerPositionToFirebaseCommand {
+    player;
+    constructor(player) {
+        this.player = player;
+    }
+    execute() {
+        update(ref(FirebaseClient.instance.db, `/players/${this.player.id}`), {
+            x: this.player.x,
+            y: this.player.y,
+            z: this.player.z,
+            color: this.player.colorCode
+        });
+    }
+}
+class MainGameMouseClickCommand extends HandleMouseClickCommand {
+    execute() {
+        new ToggleMouseMovementCommand().execute();
+    }
+}
+class ToggleMouseMovementCommand {
+    execute() {
+        if (Game.instance.controller.mouseMoveCommand === undefined) {
+            Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand());
+        }
+        else {
+            Game.instance.controller.assignMouseMoveCommand(undefined);
+        }
+    }
+}
+export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand };
 //# sourceMappingURL=Command.js.map

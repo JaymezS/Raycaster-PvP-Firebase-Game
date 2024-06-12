@@ -1,3 +1,21 @@
+import { PlayerController } from "./PlayerController.js";
+import { Canvas } from "./Canvas.js";
+import { DisplayMenuAndSetMouseControllerCommand, StartGameCommand } from "./Command.js";
+import { Utilities } from "./Utilities.js";
+import { Player } from "./Player.js";
+import { GameMap } from "./Map.js";
+import { CompositeMenu, MenuButton } from "./Menu.js";
+import { PIXEL_COLORS } from "./Map.js";
+import {
+  set,
+  onDisconnect,
+  ref,
+  onValue,
+  //@ts-ignore Import module
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { FirebaseClient } from "./FirebaseClient.js";
+
+
 class Game {
   private static _instance: Game | undefined;
   readonly player: Player = new Player()
@@ -5,31 +23,49 @@ class Game {
   readonly controller: PlayerController = new PlayerController(this.player)
   private context = Canvas.instance.context;
   private gameLoop: any = undefined;
-  readonly FPS: number = 30;
+  readonly FPS: number = 60;
   private timeInterval: number = 1000/this.FPS
   readonly resolution: number = 8;
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 20
-  readonly maxRenderDistance: number = 10 * GameMap.tileSize;
+  readonly maxRenderDistance: number = 8 * GameMap.tileSize;
   
   private mainMenu: CompositeMenu = new CompositeMenu("main menu")
 
+  public players = {
 
-  private test: boolean = false;
-
-
-  private players: Player[] = [this.player]
+  }
 
   private constructor() {
     this.composeMainMenu()
+
+    onDisconnect(
+      set(ref(FirebaseClient.instance.db, `/players`), this.players)
+    )
   }
 
   public start() {
     new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute()
   }
 
+  public updateFromDatabase(): void {
+    onValue(
+      ref(FirebaseClient.instance.db, "/players"),
+      (snapshot) => {
+        if (snapshot.val()) {
+          this.players = snapshot.val();
+
+          //Remove the player, but keep all the other users
+          delete this.players[this.player.id];
+        }
+      },
+      { onlyOnce: true }
+    );
+  }
+
   public startGame() {
     this.gameLoop = setInterval(() => {
+      this.updateFromDatabase()
       this.player.updateVerticalMovementDueToGravity()
       this.controller.updatePlayer()
       this.renderForPlayer(this.player)
@@ -54,20 +90,19 @@ class Game {
     this.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
   }
 
+
+
   public renderForPlayer(player: Player) {
     this.clearScreen()
+    const TIME: number = performance.now()
     
     for (let x: number = 0; x < Canvas.WIDTH; x += this.resolution) {
       for (let y: number = 0; y < Canvas.HEIGHT; y += this.resolution) {
 
         const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
-        const CURRENT_RAY_PITCH = (player.pitch - player.fov / 4) + (y / Canvas.HEIGHT) * player.fov/2;
+        const CURRENT_RAY_PITCH = (player.pitch + player.fov / 4) - (y / Canvas.HEIGHT) * player.fov/2
 
-        if (this.test) {
-          console.log(CURRENT_RAY_YAW, CURRENT_RAY_PITCH)
-        }
-
-        const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
+        const RAW_RAY_DISTANCE = player.castBlockVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
 
         // cos angle = distance to wall (adj) / raw ray distance (hyp)
         // distance to wall = raw distance * cos angle
@@ -91,7 +126,12 @@ class Game {
           )`)
       }
     }
-    this.test = false;
+    
+    const TIME_TWO: number = performance.now()
+    const TIME_DIFF: number = TIME_TWO - TIME;
+    this.context.font = "24px Arial"
+    this.context.fillStyle = "white"
+    this.context.fillText(`MAX FPS: ${Math.round(1000 / TIME_DIFF)}`, 50, 50)
   }
   
   public static get instance(): Game {
@@ -101,3 +141,6 @@ class Game {
     return Game._instance;
   }
 }
+
+
+export {Game}

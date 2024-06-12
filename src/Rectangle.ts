@@ -1,3 +1,4 @@
+import { Canvas } from "./Canvas.js";
 
 class Rectangle {
   constructor(
@@ -29,3 +30,5 @@ class Rectangle {
     Canvas.instance.context.fillRect(this.x, this.y, this.width, this.height);
   }
 }
+
+export {Rectangle}

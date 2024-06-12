@@ -1,11 +1,10 @@
-"use strict";
-const PIXEL_COLORS = [[0, 255, 255], [0, 255, 0], [0, 0, 0], [200, 200, 200]];
+const PIXEL_COLORS = [[0, 255, 255], [0, 255, 0], [200, 200, 200], [255, 255, 0]];
 var Colors;
 (function (Colors) {
     Colors[Colors["AQUA"] = 0] = "AQUA";
     Colors[Colors["GREEN"] = 1] = "GREEN";
-    Colors[Colors["BLACK"] = 2] = "BLACK";
-    Colors[Colors["GRAY"] = 3] = "GRAY";
+    Colors[Colors["GRAY"] = 2] = "GRAY";
+    Colors[Colors["YELLOW"] = 3] = "YELLOW";
 })(Colors || (Colors = {}));
 class GameMap {
     static tileSize = 64;
@@ -209,4 +208,5 @@ class GameMap {
         return this._map;
     }
 }
+export { GameMap, Colors, PIXEL_COLORS };
 //# sourceMappingURL=Map.js.map

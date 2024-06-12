@@ -1,4 +1,9 @@
-"use strict";
+import { UpdatePlayerPositionToFirebaseCommand } from "./Command.js";
+import { Game } from "./Game.js";
+import { GameMap, Colors, PIXEL_COLORS } from "./Map.js";
+//@ts-ignore Import module
+import { nanoid } from "https://cdnjs.cloudflare.com/ajax/libs/nanoid/3.3.4/nanoid.min.js";
+import { Utilities } from "./Utilities.js";
 class Player {
     static size = 32;
     // note that x and y are center values
@@ -11,6 +16,8 @@ class Player {
     _speed = 3;
     _rotationSpeed = Math.PI / 180;
     _fov = Math.PI / 3; // Field of view
+    colorCode = Utilities.randInt(0, PIXEL_COLORS.length);
+    id = nanoid(20);
     grounded = false;
     maxPitch = Math.PI / 2;
     // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
@@ -69,7 +76,7 @@ class Player {
     }
     jump() {
         if (this.grounded) {
-            this.zVelocity = -16;
+            this.zVelocity = 16;
         }
     }
     rotateYaw(deg) {
@@ -96,17 +103,19 @@ class Player {
         if (this.collideWithWall()) {
             this._x -= this.xVelocity;
         }
+        new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     moveY() {
         this._y += this.yVelocity;
         if (this.collideWithWall()) {
             this._y -= this.yVelocity;
         }
+        new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     moveZ() {
         this._z += this.zVelocity;
         if (this.collideWithWall()) {
-            if (this.zVelocity > 0) {
+            if (this.zVelocity < 0) {
                 this.grounded = true;
             }
             else {
@@ -119,6 +128,7 @@ class Player {
         else {
             this.grounded = false;
         }
+        new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     updateVelocities() {
         this.xVelocity = this._speed * Math.cos(this._yaw);
@@ -127,10 +137,10 @@ class Player {
     updateVerticalMovementDueToGravity() {
         if (!this.grounded) {
             if (Math.abs(this.zVelocity) <= Game.instance.terminalVelocity) {
-                this.zVelocity += Game.instance.gravitationalAccelerationConstant;
+                this.zVelocity -= Game.instance.gravitationalAccelerationConstant;
             }
         }
-        else if (this.zVelocity > 0) {
+        else if (this.zVelocity < 0) {
             this.zVelocity = 0;
         }
         this.moveZ();
@@ -141,16 +151,27 @@ class Player {
         }
         return false;
     }
+    pointInCharacterAtLocation(px, py, pz, cx, cy, cz) {
+        if (px >= cx - Player.size / 2 &&
+            px <= cx + Player.size / 2 &&
+            py >= cy - Player.size / 2 &&
+            py <= cy + Player.size / 2 &&
+            pz <= cz &&
+            pz >= cz - Player.size) {
+            return true;
+        }
+        return false;
+    }
     collideWithWall() {
         const VERTICES = [
-            [this._x - this.size / 2, this._y - this.size / 2, this._z - this.size / 2],
-            [this._x - this.size / 2, this._y + this.size / 2, this._z - this.size / 2],
-            [this._x - this.size / 2, this._y + this.size / 2, this._z + this.size / 2],
-            [this._x - this.size / 2, this._y - this.size / 2, this._z + this.size / 2],
-            [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size / 2],
-            [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size / 2],
-            [this._x + this.size / 2, this._y - this.size / 2, this._z + this.size / 2],
-            [this._x + this.size / 2, this._y + this.size / 2, this._z + this.size / 2],
+            [this._x - this.size / 2, this._y - this.size / 2, this._z],
+            [this._x - this.size / 2, this._y + this.size / 2, this._z],
+            [this._x - this.size / 2, this._y + this.size / 2, this._z],
+            [this._x - this.size / 2, this._y - this.size / 2, this._z],
+            [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size],
+            [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size],
+            [this._x + this.size / 2, this._y - this.size / 2, this._z - this.size],
+            [this._x + this.size / 2, this._y + this.size / 2, this._z - this.size],
         ];
         for (let vertex of VERTICES) {
             if (this.pointInWall(vertex[0], vertex[1], vertex[2])) {
@@ -159,14 +180,40 @@ class Player {
         }
         return false;
     }
-    castVisionRay(yaw, pitch) {
+    castBlockVisionRay2(yaw, pitch) {
         let currentRayPositionX = this._x;
         let currentRayPositionY = this._y;
         let currentRayPositionZ = this._z;
         const RAY_VELOCITY_X = Math.cos(pitch) * Math.cos(yaw);
         const RAY_VELOCITY_Y = Math.cos(pitch) * Math.sin(yaw);
         const RAY_VELOCITY_Z = Math.sin(pitch);
+        // calculate collsion in x direction
+        const Y_OFFSET = GameMap.tileSize;
+        // 8:40: optimized algorithm to skip empty blocks
+        // https://www.youtube.com/watch?v=gYRrGTC7GtA&t=3s
+        return [];
+    }
+    castBlockVisionRay(yaw, pitch) {
+        // cheap way to increase performance by increasing the ray cast speed, it does reduce accuracy of render tho
+        // 4-5 is the limit, any higher and graphics will be completely innaccurate
+        // remove this method later, try  to use castBlockVisionRay2 if possible
+        const RAY_SPEED = 4;
+        let currentRayPositionX = this._x;
+        let currentRayPositionY = this._y;
+        let currentRayPositionZ = this._z;
+        const RAY_VELOCITY_X = RAY_SPEED * Math.cos(pitch) * Math.cos(yaw);
+        const RAY_VELOCITY_Y = RAY_SPEED * Math.cos(pitch) * Math.sin(yaw);
+        const RAY_VELOCITY_Z = RAY_SPEED * Math.sin(pitch);
+        const CHARACTERS_POSITIONS = Object.values(Game.instance.players);
         while (true) {
+            let rayhitCharacter = false;
+            let hitColor = undefined;
+            for (let char of CHARACTERS_POSITIONS) {
+                if (this.pointInCharacterAtLocation(currentRayPositionX, currentRayPositionY, currentRayPositionZ, char.x, char.y, char.z)) {
+                    rayhitCharacter = true;
+                    hitColor = char.color;
+                }
+            }
             // if the ray collided into a wall, return the distance the ray has travelled and the x position of the wall hit (from the left)
             if (Game.instance.gameMap.map[Math.floor(currentRayPositionZ / GameMap.tileSize)][Math.floor(currentRayPositionY / GameMap.tileSize)][Math.floor(currentRayPositionX / GameMap.tileSize)] === 1) {
                 let pixelColorCode;
@@ -197,6 +244,14 @@ class Player {
                     pixelColorCode
                 ];
             }
+            else if (rayhitCharacter) {
+                return [
+                    Math.sqrt(Math.pow(currentRayPositionX - this._x, 2) +
+                        Math.pow(currentRayPositionY - this._y, 2) +
+                        Math.pow(currentRayPositionZ - this._z, 2)),
+                    hitColor
+                ];
+            }
             else if (Math.sqrt(Math.pow(currentRayPositionX - this._x, 2) +
                 Math.pow(currentRayPositionY - this._y, 2) +
                 Math.pow(currentRayPositionZ - this._z, 2)) > Game.instance.maxRenderDistance) {
@@ -211,4 +266,5 @@ class Player {
         }
     }
 }
+export { Player };
 //# sourceMappingURL=Player.js.map

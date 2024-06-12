@@ -1,4 +1,4 @@
-"use strict";
+import { Game } from "./Game.js";
 class Canvas {
     static _instance;
     static get instance() {
@@ -23,4 +23,5 @@ class Canvas {
         Game.instance.start();
     }
 }
+export { Canvas };
 //# sourceMappingURL=Canvas.js.map

@@ -1,3 +1,8 @@
+import { Command } from "./Command.js";
+import { Rectangle } from "./Rectangle.js";
+import { Canvas } from "./Canvas.js";
+
+
 interface MenuProperties {
   addCommand(Command: Command): MenuProperties;
   executeCommand(): void;
@@ -117,3 +122,6 @@ class CompositeMenu implements MenuProperties {
     this.drawAllButtons();
   }
 }
+
+
+export {CompositeMenu, MenuButton}

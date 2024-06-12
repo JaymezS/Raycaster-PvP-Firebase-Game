@@ -1,3 +1,7 @@
+import { HandleMouseClickCommand, HandleMouseMoveCommand } from "./Command.js";
+import { Canvas } from "./Canvas.js";
+import { Player } from "./Player.js";
+
 class PlayerController {
   private wKeyPressed: boolean = false;
   private aKeyPressed: boolean = false;
@@ -25,8 +29,18 @@ class PlayerController {
 
   protected mousePositionX: number = 0;
   protected mousePositionY: number = 0;
-  private mouseClickCommand: HandleMouseClickCommand | undefined;
-  private mouseMoveCommand: HandleMouseMoveCommand | undefined
+  private _mouseClickCommand: HandleMouseClickCommand | undefined;
+  private _mouseMoveCommand: HandleMouseMoveCommand | undefined
+
+
+  public get mouseClickCommand(): HandleMouseClickCommand | undefined {
+    return this._mouseClickCommand
+  }
+
+  public get mouseMoveCommand(): HandleMouseMoveCommand | undefined {
+    return this._mouseMoveCommand
+  }
+
 
   constructor(readonly player: Player) {
     document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
@@ -70,16 +84,16 @@ class PlayerController {
   }
 
   public assignMouseClickCommand(c: HandleMouseClickCommand | undefined) {
-    this.mouseClickCommand = c;
+    this._mouseClickCommand = c;
   }
 
   public assignMouseMoveCommand(c: HandleMouseMoveCommand | undefined) {
-    this.mouseMoveCommand = c
+    this._mouseMoveCommand = c
   }
 
   private handleMouseMoveEvent(event: MouseEvent) {
-    if (this.mouseMoveCommand !== undefined) {
-      this.mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute()
+    if (this._mouseMoveCommand !== undefined) {
+      this._mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute()
     }
   }
 
@@ -101,13 +115,16 @@ class PlayerController {
       this.mousePositionX >= 0 &&
       this.mousePositionY >= 0
     ) {
-      if (this.mouseClickCommand === undefined) {
+      if (this._mouseClickCommand === undefined) {
         throw new Error("no on click command assigned");
       } else {
-        this.mouseClickCommand
+        this._mouseClickCommand
           .assignCoordinates(this.mousePositionX, this.mousePositionY)
           .execute();
       }
     }
   }
 }
+
+
+export {PlayerController}

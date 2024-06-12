@@ -1,4 +1,4 @@
-"use strict";
+import { Canvas } from "./Canvas.js";
 class Driver {
     constructor() {
         Canvas.instance;

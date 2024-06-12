@@ -1,3 +1,5 @@
+import { Game } from "./Game.js";
+
 class Canvas {
   private static _instance: Canvas | undefined;
 
@@ -30,3 +32,6 @@ class Canvas {
     Game.instance.start()
   }
 }
+
+
+export {Canvas}

@@ -1,4 +1,15 @@
-"use strict";
+import { PlayerController } from "./PlayerController.js";
+import { Canvas } from "./Canvas.js";
+import { DisplayMenuAndSetMouseControllerCommand, StartGameCommand } from "./Command.js";
+import { Utilities } from "./Utilities.js";
+import { Player } from "./Player.js";
+import { GameMap } from "./Map.js";
+import { CompositeMenu, MenuButton } from "./Menu.js";
+import { PIXEL_COLORS } from "./Map.js";
+import { set, onDisconnect, ref, onValue,
+//@ts-ignore Import module
+ } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { FirebaseClient } from "./FirebaseClient.js";
 class Game {
     static _instance;
     player = new Player();
@@ -6,23 +17,33 @@ class Game {
     controller = new PlayerController(this.player);
     context = Canvas.instance.context;
     gameLoop = undefined;
-    FPS = 30;
+    FPS = 60;
     timeInterval = 1000 / this.FPS;
     resolution = 8;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
-    maxRenderDistance = 10 * GameMap.tileSize;
+    maxRenderDistance = 8 * GameMap.tileSize;
     mainMenu = new CompositeMenu("main menu");
-    test = false;
-    players = [this.player];
+    players = {};
     constructor() {
         this.composeMainMenu();
+        onDisconnect(set(ref(FirebaseClient.instance.db, `/players`), this.players));
     }
     start() {
         new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();
     }
+    updateFromDatabase() {
+        onValue(ref(FirebaseClient.instance.db, "/players"), (snapshot) => {
+            if (snapshot.val()) {
+                this.players = snapshot.val();
+                //Remove the player, but keep all the other users
+                delete this.players[this.player.id];
+            }
+        }, { onlyOnce: true });
+    }
     startGame() {
         this.gameLoop = setInterval(() => {
+            this.updateFromDatabase();
             this.player.updateVerticalMovementDueToGravity();
             this.controller.updatePlayer();
             this.renderForPlayer(this.player);
@@ -41,14 +62,12 @@ class Game {
     }
     renderForPlayer(player) {
         this.clearScreen();
+        const TIME = performance.now();
         for (let x = 0; x < Canvas.WIDTH; x += this.resolution) {
             for (let y = 0; y < Canvas.HEIGHT; y += this.resolution) {
                 const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
-                const CURRENT_RAY_PITCH = (player.pitch - player.fov / 4) + (y / Canvas.HEIGHT) * player.fov / 2;
-                if (this.test) {
-                    console.log(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
-                }
-                const RAW_RAY_DISTANCE = player.castVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
+                const CURRENT_RAY_PITCH = (player.pitch + player.fov / 4) - (y / Canvas.HEIGHT) * player.fov / 2;
+                const RAW_RAY_DISTANCE = player.castBlockVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
                 // cos angle = distance to wall (adj) / raw ray distance (hyp)
                 // distance to wall = raw distance * cos angle
                 // angle = ray angle - player angle (or vice versa doesn't matter)
@@ -68,7 +87,11 @@ class Game {
           )`);
             }
         }
-        this.test = false;
+        const TIME_TWO = performance.now();
+        const TIME_DIFF = TIME_TWO - TIME;
+        this.context.font = "24px Arial";
+        this.context.fillStyle = "white";
+        this.context.fillText(`MAX FPS: ${Math.round(1000 / TIME_DIFF)}`, 50, 50);
     }
     static get instance() {
         if (Game._instance === undefined) {
@@ -77,4 +100,5 @@ class Game {
         return Game._instance;
     }
 }
+export { Game };
 //# sourceMappingURL=Game.js.map

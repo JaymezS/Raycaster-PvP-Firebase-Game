@@ -1,4 +1,4 @@
-"use strict";
+import { Canvas } from "./Canvas.js";
 class PlayerController {
     player;
     wKeyPressed = false;
@@ -25,8 +25,14 @@ class PlayerController {
     }
     mousePositionX = 0;
     mousePositionY = 0;
-    mouseClickCommand;
-    mouseMoveCommand;
+    _mouseClickCommand;
+    _mouseMoveCommand;
+    get mouseClickCommand() {
+        return this._mouseClickCommand;
+    }
+    get mouseMoveCommand() {
+        return this._mouseMoveCommand;
+    }
     constructor(player) {
         this.player = player;
         document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
@@ -67,14 +73,14 @@ class PlayerController {
         document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e));
     }
     assignMouseClickCommand(c) {
-        this.mouseClickCommand = c;
+        this._mouseClickCommand = c;
     }
     assignMouseMoveCommand(c) {
-        this.mouseMoveCommand = c;
+        this._mouseMoveCommand = c;
     }
     handleMouseMoveEvent(event) {
-        if (this.mouseMoveCommand !== undefined) {
-            this.mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute();
+        if (this._mouseMoveCommand !== undefined) {
+            this._mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute();
         }
     }
     handleMouseClickEvent(event) {
@@ -92,15 +98,16 @@ class PlayerController {
             this.mousePositionX < Canvas.WIDTH &&
             this.mousePositionX >= 0 &&
             this.mousePositionY >= 0) {
-            if (this.mouseClickCommand === undefined) {
+            if (this._mouseClickCommand === undefined) {
                 throw new Error("no on click command assigned");
             }
             else {
-                this.mouseClickCommand
+                this._mouseClickCommand
                     .assignCoordinates(this.mousePositionX, this.mousePositionY)
                     .execute();
             }
         }
     }
 }
+export { PlayerController };
 //# sourceMappingURL=PlayerController.js.map

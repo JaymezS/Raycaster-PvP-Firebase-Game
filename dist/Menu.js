@@ -1,4 +1,5 @@
-"use strict";
+import { Rectangle } from "./Rectangle.js";
+import { Canvas } from "./Canvas.js";
 class MenuButton extends Rectangle {
     title;
     static buttonWidth = 100;
@@ -87,4 +88,5 @@ class CompositeMenu {
         this.drawAllButtons();
     }
 }
+export { CompositeMenu, MenuButton };
 //# sourceMappingURL=Menu.js.map

@@ -1,9 +1,16 @@
+import { CompositeMenu } from "./Menu.js";
+import { Game } from "./Game.js";
+import { Player } from "./Player.js";
+import {
+  update,
+  ref,
+  //@ts-ignore Import module
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { FirebaseClient } from "./FirebaseClient.js";
+
 interface Command {
   execute(): void;
 }
-
-
-
 
 abstract class HandleMouseClickCommand implements Command {
   
@@ -47,8 +54,8 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
 class StartGameCommand implements Command {
   public execute(): void {
     Game.instance.startGame()
-    Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand)
-    Game.instance.controller.assignMouseClickCommand(undefined)
+    Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand())
+    Game.instance.controller.assignMouseClickCommand(new MainGameMouseClickCommand())
   }
 }
 
@@ -78,7 +85,53 @@ abstract class HandleMouseMoveCommand implements Command {
 
 class MainGameHandleMouseMoveCommand extends HandleMouseMoveCommand implements Command {
   public execute(): void {
-    Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed)
+    Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed * -1)
     Game.instance.player.rotateYaw(this.dx * Game.instance.player.rotationSpeed)
   }
+}
+
+class UpdatePlayerPositionToFirebaseCommand implements Command {
+  constructor(protected player: Player) { }
+
+  public execute(): void {
+    update(
+      ref(FirebaseClient.instance.db, `/players/${this.player.id}`),
+      {
+        x: this.player.x, 
+        y: this.player.y,
+        z: this.player.z,
+        color: this.player.colorCode
+      }
+    )
+  }
+}
+
+
+class MainGameMouseClickCommand extends HandleMouseClickCommand implements Command {
+  public execute(): void {
+    new ToggleMouseMovementCommand().execute()
+  }
+}
+
+
+class ToggleMouseMovementCommand implements Command {
+  public execute(): void {
+    if (Game.instance.controller.mouseMoveCommand === undefined) {
+      Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand())
+    } else {
+      Game.instance.controller.assignMouseMoveCommand(undefined)
+    }
+  }
+}
+
+export {
+  Command,
+  HandleMouseClickCommand,
+  HandleMouseMoveCommand,
+  MainGameHandleMouseMoveCommand, 
+  DisplayMenuAndSetMouseControllerCommand,
+  StartGameCommand,
+  MenuMouseClickedEventHandlerCommand,
+  MainGameMouseClickedEventHandlerCommand,
+  UpdatePlayerPositionToFirebaseCommand
 }

@@ -1,4 +1,4 @@
-"use strict";
+import { Canvas } from "./Canvas.js";
 class Rectangle {
     _x;
     _y;
@@ -29,4 +29,5 @@ class Rectangle {
         Canvas.instance.context.fillRect(this.x, this.y, this.width, this.height);
     }
 }
+export { Rectangle };
 //# sourceMappingURL=Rectangle.js.map

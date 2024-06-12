@@ -1,3 +1,6 @@
+import { Canvas } from "./Canvas.js";
+import { Game } from "./Game.js";
+
 class Utilities {
   public static drawLine(x1: number, y1: number, x2: number, y2: number, color: string) {
     const CONTEXT: CanvasRenderingContext2D = Canvas.instance.context;
@@ -13,4 +16,13 @@ class Utilities {
     Canvas.instance.context.fillStyle = color;
     Canvas.instance.context.fillRect(x, y, Game.instance.resolution, Game.instance.resolution);
   }
+
+
+  // lower bound inclusive, upper exclusive
+  public static randInt(low: number, high: number) {
+    return Math.floor(Math.random() * (high-low)) + low
+  }
 }
+
+
+export {Utilities}

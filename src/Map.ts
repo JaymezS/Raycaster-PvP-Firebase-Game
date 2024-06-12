@@ -1,11 +1,12 @@
 
-const PIXEL_COLORS: number[][] = [[0, 255, 255], [0, 255, 0], [0, 0, 0], [200, 200, 200]]
+const PIXEL_COLORS: number[][] = [[0, 255, 255], [0, 255, 0], [200, 200, 200], [255, 255, 0]]
 enum Colors {
   AQUA = 0,
   GREEN = 1,
-  BLACK = 2,
-  GRAY = 3
+  GRAY = 2,
+  YELLOW = 3
 }
+
 
 class GameMap {
   public static tileSize = 64;
@@ -213,3 +214,6 @@ class GameMap {
     return this._map
   }
 }
+
+
+export {GameMap, Colors, PIXEL_COLORS}
