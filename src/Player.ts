@@ -247,7 +247,7 @@ class Player {
     // cheap way to increase performance by increasing the ray cast speed, it does reduce accuracy of render tho
     // 4-5 is the limit, any higher and graphics will be completely innaccurate
     // remove this method later, try  to use castBlockVisionRay2 if possible
-    const RAY_SPEED: number = 4;
+    const RAY_SPEED: number = 5;
 
     let currentRayPositionX: number = this._x;
     let currentRayPositionY: number = this._y;

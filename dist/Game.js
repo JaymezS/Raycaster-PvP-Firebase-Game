@@ -22,7 +22,7 @@ class Game {
     resolution = 8;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
-    maxRenderDistance = 8 * GameMap.tileSize;
+    maxRenderDistance = 50 * GameMap.tileSize;
     mainMenu = new CompositeMenu("main menu");
     otherPlayers = {};
     constructor() {
@@ -82,7 +82,7 @@ class Game {
                 // custom shading
                 // render the pixel
                 const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
-                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.5);
+                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]) + 1, 0.7);
                 Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},

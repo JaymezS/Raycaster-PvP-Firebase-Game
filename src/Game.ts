@@ -26,7 +26,7 @@ class Game {
   readonly resolution: number = 8;
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 20
-  readonly maxRenderDistance: number = 8 * GameMap.tileSize;
+  readonly maxRenderDistance: number = 50 * GameMap.tileSize;
   
   private mainMenu: CompositeMenu = new CompositeMenu("main menu")
 
@@ -115,7 +115,8 @@ class Game {
         // custom shading
         // render the pixel
         const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
-        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.5) 
+        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]) + 1, 0.7) 
+        
         Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},
