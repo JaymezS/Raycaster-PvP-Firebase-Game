@@ -1,12 +1,13 @@
 import { PlayerController } from "./PlayerController.js";
 import { Canvas } from "./Canvas.js";
-import { DisplayMenuAndSetMouseControllerCommand, StartGameCommand } from "./Command.js";
+import { ClearAllPlayersFromDatabaseCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand } from "./Command.js";
 import { Utilities } from "./Utilities.js";
 import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
 import { CompositeMenu, MenuButton } from "./Menu.js";
 import { PIXEL_COLORS } from "./Map.js";
 import {
+  update,
   set,
   onDisconnect,
   ref,
@@ -40,8 +41,8 @@ class Game {
     this.composeMainMenu()
 
     onDisconnect(
-      set(ref(FirebaseClient.instance.db, `/players`), this.players)
-    )
+      set(ref(FirebaseClient.instance.db, "/players"), this.players)
+    );
   }
 
   public start() {

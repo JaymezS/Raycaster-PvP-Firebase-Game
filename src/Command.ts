@@ -4,6 +4,7 @@ import { Player } from "./Player.js";
 import {
   update,
   ref,
+  set
   //@ts-ignore Import module
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
@@ -124,6 +125,14 @@ class ToggleMouseMovementCommand implements Command {
   }
 }
 
+
+class ClearAllPlayersFromDatabaseCommand implements Command {
+  public execute(): void {
+    set(ref(FirebaseClient.instance.db, `/players`), {})
+  }
+}
+
+
 export {
   Command,
   HandleMouseClickCommand,
@@ -133,5 +142,6 @@ export {
   StartGameCommand,
   MenuMouseClickedEventHandlerCommand,
   MainGameMouseClickedEventHandlerCommand,
-  UpdatePlayerPositionToFirebaseCommand
+  UpdatePlayerPositionToFirebaseCommand,
+  ClearAllPlayersFromDatabaseCommand
 }

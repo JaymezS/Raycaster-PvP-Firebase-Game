@@ -27,7 +27,7 @@ class Game {
     players = {};
     constructor() {
         this.composeMainMenu();
-        onDisconnect(set(ref(FirebaseClient.instance.db, `/players`), this.players));
+        onDisconnect(set(ref(FirebaseClient.instance.db, "/players"), this.players));
     }
     start() {
         new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();

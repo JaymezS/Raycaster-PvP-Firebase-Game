@@ -1,5 +1,5 @@
 import { Game } from "./Game.js";
-import { update, ref,
+import { update, ref, set
 //@ts-ignore Import module
  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
@@ -93,5 +93,10 @@ class ToggleMouseMovementCommand {
         }
     }
 }
-export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand };
+class ClearAllPlayersFromDatabaseCommand {
+    execute() {
+        set(ref(FirebaseClient.instance.db, `/players`), {});
+    }
+}
+export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand, ClearAllPlayersFromDatabaseCommand };
 //# sourceMappingURL=Command.js.map
