@@ -26,7 +26,7 @@ class Game {
   private timeInterval: number = 1000/this.FPS
   readonly resolution: number = 8;
   readonly gravitationalAccelerationConstant: number = 1
-  readonly terminalVelocity: number = 20
+  readonly terminalVelocity: number = 12
   readonly maxRenderDistance: number = 8 * GameMap.tileSize;
   
   private mainMenu: CompositeMenu = new CompositeMenu("main menu")

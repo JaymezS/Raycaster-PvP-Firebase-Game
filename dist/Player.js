@@ -136,7 +136,10 @@ class Player {
     }
     updateVerticalMovementDueToGravity() {
         if (!this.grounded) {
-            if (Math.abs(this.zVelocity) <= Game.instance.terminalVelocity) {
+            if (this.zVelocity <= -Game.instance.terminalVelocity) {
+                this.zVelocity = -Game.instance.terminalVelocity;
+            }
+            else {
                 this.zVelocity -= Game.instance.gravitationalAccelerationConstant;
             }
         }

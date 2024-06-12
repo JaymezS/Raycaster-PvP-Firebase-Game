@@ -22,7 +22,7 @@ class Game {
     timeInterval = 1000 / this.FPS;
     resolution = 8;
     gravitationalAccelerationConstant = 1;
-    terminalVelocity = 20;
+    terminalVelocity = 12;
     maxRenderDistance = 8 * GameMap.tileSize;
     mainMenu = new CompositeMenu("main menu");
     otherPlayers = {};
