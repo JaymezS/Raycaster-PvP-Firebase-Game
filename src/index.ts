@@ -9,3 +9,5 @@ class Driver {
 
 
 new Driver()
+//@ts-ignorets-ignore
+window.Driver = Driver

@@ -18,6 +18,17 @@ class Utilities {
     static randInt(low, high) {
         return Math.floor(Math.random() * (high - low)) + low;
     }
+    static calculateAngleFromLeftOfCone(totalAngle, totalLength, distanceFromLeft) {
+        const OPPOSITE = totalLength / 2;
+        const HEIGHT = (OPPOSITE) / (Math.tan(totalAngle / 2));
+        const ANGLE_FROM_CENTER = Math.atan(Math.abs(OPPOSITE - distanceFromLeft) / HEIGHT);
+        if (distanceFromLeft <= OPPOSITE) {
+            return (totalAngle / 2) - ANGLE_FROM_CENTER;
+        }
+        else {
+            return (totalAngle / 2) + ANGLE_FROM_CENTER;
+        }
+    }
 }
 export { Utilities };
 //# sourceMappingURL=Utilities.js.map

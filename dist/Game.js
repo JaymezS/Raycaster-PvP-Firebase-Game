@@ -22,7 +22,7 @@ class Game {
     resolution = 8;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 20;
-    maxRenderDistance = 50 * GameMap.tileSize;
+    maxRenderDistance = 8 * GameMap.tileSize;
     mainMenu = new CompositeMenu("main menu");
     otherPlayers = {};
     constructor() {
@@ -49,7 +49,7 @@ class Game {
             this.updateFromDatabase();
             this.player.updateVerticalMovementDueToGravity();
             this.controller.updatePlayer();
-            this.renderForPlayer(this.player);
+            this.renderForPlayer();
         }, this.timeInterval);
     }
     composeMainMenu() {
@@ -63,14 +63,24 @@ class Game {
     clearScreen() {
         this.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
     }
-    renderForPlayer(player) {
+    renderForPlayer() {
         this.clearScreen();
         const TIME = performance.now();
         for (let x = 0; x < Canvas.WIDTH; x += this.resolution) {
+            // default ray cast
+            const CURRENT_RAY_YAW = (this.player.yaw - this.player.fov / 2) + (x / Canvas.WIDTH) * this.player.fov;
+            // attempted fix to gradient
+            let rayAngleYaw = Utilities.calculateAngleFromLeftOfCone(this.player.fov, Canvas.WIDTH, x);
+            rayAngleYaw += (this.player.yaw - this.player.fov / 2);
             for (let y = 0; y < Canvas.HEIGHT; y += this.resolution) {
-                const CURRENT_RAY_YAW = (player.yaw - player.fov / 2) + (x / Canvas.WIDTH) * player.fov;
-                const CURRENT_RAY_PITCH = (player.pitch + player.fov / 4) - (y / Canvas.HEIGHT) * player.fov / 2;
-                const RAW_RAY_DISTANCE = player.castBlockVisionRay(CURRENT_RAY_YAW, CURRENT_RAY_PITCH);
+                const VERTICAL_FOV = Canvas.HEIGHT / Canvas.WIDTH * this.player.fov;
+                // old ray pitch
+                const CURRENT_RAY_PITCH = (this.player.pitch + this.player.fov / 4) - (y / Canvas.HEIGHT) * this.player.fov / 2;
+                // attempted fix to gradient
+                // Note that this does nothing right now
+                let rayAnglePitch = Utilities.calculateAngleFromLeftOfCone(VERTICAL_FOV, Canvas.HEIGHT, y);
+                rayAnglePitch = (this.player.pitch + VERTICAL_FOV / 2) - rayAnglePitch;
+                const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngleYaw, rayAnglePitch);
                 // cos angle = distance to wall (adj) / raw ray distance (hyp)
                 // distance to wall = raw distance * cos angle
                 // angle = ray angle - player angle (or vice versa doesn't matter)
@@ -82,7 +92,7 @@ class Game {
                 // custom shading
                 // render the pixel
                 const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
-                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]) + 1, 0.7);
+                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.7);
                 Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},

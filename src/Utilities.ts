@@ -22,6 +22,21 @@ class Utilities {
   public static randInt(low: number, high: number) {
     return Math.floor(Math.random() * (high-low)) + low
   }
+
+
+  public static calculateAngleFromLeftOfCone(
+    totalAngle: number, totalLength: number, distanceFromLeft: number
+  ): number {
+    const OPPOSITE: number = totalLength / 2
+    const HEIGHT: number = (OPPOSITE) / (Math.tan(totalAngle / 2))
+    const ANGLE_FROM_CENTER: number = Math.atan(Math.abs(OPPOSITE - distanceFromLeft) / HEIGHT)
+    
+    if (distanceFromLeft <= OPPOSITE) {
+      return (totalAngle / 2) - ANGLE_FROM_CENTER;
+    } else {
+      return (totalAngle / 2) + ANGLE_FROM_CENTER
+    }
+  }
 }
 
 

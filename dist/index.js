@@ -6,4 +6,6 @@ class Driver {
     }
 }
 new Driver();
+//@ts-ignorets-ignore
+window.Driver = Driver;
 //# sourceMappingURL=index.js.map
