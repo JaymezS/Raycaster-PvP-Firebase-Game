@@ -45,6 +45,9 @@ class VectorMath {
     static convertUnitVectorToVector(uv, magnitude) {
         return [uv[0] * magnitude, uv[1] * magnitude, uv[2] * magnitude];
     }
+    static scalarMultiply(v, s) {
+        return [v[0] * s, v[1] * s, v[2] * s];
+    }
 }
 export { VectorMath };
 //# sourceMappingURL=Vector.js.map

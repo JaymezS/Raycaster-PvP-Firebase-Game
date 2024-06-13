@@ -14,12 +14,11 @@ class Player {
     size = Player.size;
     _yaw = 0;
     _pitch = 0;
-    _speed = 0;
     _rotationSpeed = Math.PI / 180;
     _fov = Math.PI / 2; // Field of view
     colorCode = Utilities.randInt(0, PIXEL_COLORS.length);
-    acceleration = 3;
-    maxMovingSpeed = 5;
+    acceleration = 1;
+    maxMovingSpeed = 8;
     isAcceleratingLeft = false;
     isAcceleratingRight = false;
     isAcceleratingForward = false;
@@ -43,9 +42,6 @@ class Player {
     get pitch() {
         return this._pitch;
     }
-    get speed() {
-        return this._speed;
-    }
     get fov() {
         return this._fov;
     }
@@ -60,7 +56,7 @@ class Player {
     }
     jump() {
         if (this.grounded) {
-            this.velocityVector[2] = 16;
+            this.velocityVector[2] = 12;
         }
     }
     rotateYaw(deg) {
@@ -94,20 +90,39 @@ class Player {
     }
     modifyVelocityVectorBasedOnIntendedVector() {
         const INTENDED_MOVEMENT_DIRECTION = this.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections();
-        const INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE = VectorMath.convertUnitVectorToVector(INTENDED_MOVEMENT_DIRECTION, this.maxMovingSpeed);
-        this.velocityVector[0] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[0];
-        this.velocityVector[1] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[1];
+        if (INTENDED_MOVEMENT_DIRECTION[0] !== 0 || INTENDED_MOVEMENT_DIRECTION[1] !== 0) {
+            const INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE = VectorMath.convertUnitVectorToVector(INTENDED_MOVEMENT_DIRECTION, this.acceleration);
+            this.velocityVector[0] += INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[0];
+            this.velocityVector[1] += INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[1];
+            // limit horizontal movement speed
+            const HV_VECTOR = [this.velocityVector[0], this.velocityVector[1], 0];
+            if (VectorMath.getMagnitude(HV_VECTOR) > this.maxMovingSpeed) {
+                const CORRECTED_VECTOR = VectorMath.convertUnitVectorToVector(VectorMath.convertVectorToUnitVector(HV_VECTOR), this.maxMovingSpeed);
+                this.velocityVector[0] = CORRECTED_VECTOR[0];
+                this.velocityVector[1] = CORRECTED_VECTOR[1];
+            }
+        }
+        else if (INTENDED_MOVEMENT_DIRECTION[0] === 0 && INTENDED_MOVEMENT_DIRECTION[1] === 0) {
+            // check for deceleration
+            // decelerate character
+            const DECELERATE_DIRECTION = VectorMath.scalarMultiply(this.velocityVector, -1);
+            const INTENDED_DECELERATION_DIRECTION_WITH_MAGNITUDE = VectorMath.convertUnitVectorToVector(DECELERATE_DIRECTION, this.acceleration);
+            this.velocityVector[0] += INTENDED_DECELERATION_DIRECTION_WITH_MAGNITUDE[0];
+            this.velocityVector[1] += INTENDED_DECELERATION_DIRECTION_WITH_MAGNITUDE[1];
+        }
     }
     moveX() {
         this._x += this.velocityVector[0];
         if (this.collideWithWall()) {
             this._x -= this.velocityVector[0];
+            this.velocityVector[0] = 0;
         }
     }
     moveY() {
         this._y += this.velocityVector[1];
         if (this.collideWithWall()) {
             this._y -= this.velocityVector[1];
+            this.velocityVector[1] = 0;
         }
     }
     moveZ() {

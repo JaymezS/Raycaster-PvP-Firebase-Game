@@ -16,12 +16,11 @@ class Player {
   private size: number = Player.size
   private _yaw: number = 0;
   private _pitch: number = 0;
-  private _speed: number = 0
   private _rotationSpeed: number = Math.PI/180
   private _fov = Math.PI / 2; // Field of view
   public colorCode: number = Utilities.randInt(0, PIXEL_COLORS.length)
-  readonly acceleration: number = 3
-  readonly maxMovingSpeed: number = 5
+  readonly acceleration: number = 1
+  readonly maxMovingSpeed: number = 8
 
   public isAcceleratingLeft: boolean = false;
   public isAcceleratingRight: boolean = false;
@@ -52,9 +51,6 @@ class Player {
   public get pitch(): number {
     return this._pitch
   }
-  public get speed(): number {
-    return this._speed
-  }
   public get fov(): number {
     return this._fov
   }
@@ -72,7 +68,7 @@ class Player {
 
   public jump(): void {
     if (this.grounded) {
-      this.velocityVector[2] = 16
+      this.velocityVector[2] = 12
     }
   }
 
@@ -117,11 +113,35 @@ class Player {
   public modifyVelocityVectorBasedOnIntendedVector() {
     const INTENDED_MOVEMENT_DIRECTION: number[] =
       this.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections();
+    
+    if (INTENDED_MOVEMENT_DIRECTION[0] !== 0 || INTENDED_MOVEMENT_DIRECTION[1] !== 0) {
+      const INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE: number[] = 
+      VectorMath.convertUnitVectorToVector(INTENDED_MOVEMENT_DIRECTION, this.acceleration)
+      this.velocityVector[0] += INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[0]
+      this.velocityVector[1] += INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[1]
 
-    const INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE: number[] = 
-      VectorMath.convertUnitVectorToVector(INTENDED_MOVEMENT_DIRECTION, this.maxMovingSpeed)
-    this.velocityVector[0] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[0]
-    this.velocityVector[1] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[1]
+      // limit horizontal movement speed
+      const HV_VECTOR: number[] = [this.velocityVector[0], this.velocityVector[1], 0]
+      if (VectorMath.getMagnitude(HV_VECTOR) > this.maxMovingSpeed) {
+        const CORRECTED_VECTOR: number[] =
+          VectorMath.convertUnitVectorToVector(
+            VectorMath.convertVectorToUnitVector(HV_VECTOR), this.maxMovingSpeed
+          )
+        this.velocityVector[0] = CORRECTED_VECTOR[0]
+        this.velocityVector[1] = CORRECTED_VECTOR[1]
+      }
+    } else if (INTENDED_MOVEMENT_DIRECTION[0] === 0 && INTENDED_MOVEMENT_DIRECTION[1] === 0) {
+      // check for deceleration
+      // decelerate character
+      const DECELERATE_DIRECTION: number[] =
+        VectorMath.scalarMultiply(this.velocityVector, -1)
+      const INTENDED_DECELERATION_DIRECTION_WITH_MAGNITUDE: number[] = 
+        VectorMath.convertUnitVectorToVector(DECELERATE_DIRECTION, this.acceleration)
+        this.velocityVector[0] += INTENDED_DECELERATION_DIRECTION_WITH_MAGNITUDE[0]
+        this.velocityVector[1] += INTENDED_DECELERATION_DIRECTION_WITH_MAGNITUDE[1]
+    }
+    
+
   }
 
 
@@ -129,6 +149,7 @@ class Player {
     this._x += this.velocityVector[0]
     if (this.collideWithWall()) {
       this._x -= this.velocityVector[0]
+      this.velocityVector[0] = 0
     }
   }
 
@@ -136,6 +157,7 @@ class Player {
     this._y += this.velocityVector[1]
     if (this.collideWithWall()) {
       this._y -= this.velocityVector[1]
+      this.velocityVector[1] = 0
     }
   }
 
