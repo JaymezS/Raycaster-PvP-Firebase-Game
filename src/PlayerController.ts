@@ -2,12 +2,21 @@ import { HandleMouseClickCommand, HandleMouseMoveCommand } from "./Command.js";
 import { Canvas } from "./Canvas.js";
 import { Player } from "./Player.js";
 
+
+
 class PlayerController {
   private wKeyPressed: boolean = false;
   private aKeyPressed: boolean = false;
   private sKeyPressed: boolean = false;
   private dKeyPressed: boolean = false;
   private spaceKeyPressed: boolean = false;
+
+  // default is 1
+  private _sensitivity: number = 0.5;
+
+  public get sensitivity(): number {
+    return this._sensitivity
+  }
 
   public updatePlayer() {
     if (this.dKeyPressed) {
@@ -96,6 +105,7 @@ class PlayerController {
       this._mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute()
     }
   }
+
 
   private handleMouseClickEvent(event: MouseEvent) {
     const MOUSE_X: number = event.clientX;

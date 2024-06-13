@@ -300,9 +300,9 @@ class Player {
         ) {
           // the change in x is what made it it, calculate the position hit based on the y and z
           const HIT_Y: number = currentRayPositionY % GameMap.tileSize
-          const HIT_Z: number = currentRayPositionZ % GameMap.tileSize
+          const HIT_Z: number = GameMap.tileSize - (currentRayPositionZ % GameMap.tileSize)
 
-          pixelColorCode = GameMap.wallTexture[Math.floor(HIT_Y / GameMap.wallBitSize)][Math.floor(HIT_Z / GameMap.wallBitSize)]
+          pixelColorCode = GameMap.wallTexture[0][Math.floor(HIT_Z / GameMap.wallBitSize)][Math.floor(HIT_Y / GameMap.wallBitSize)]
         } else if (
           Game.instance.gameMap.map
           [Math.floor(currentRayPositionZ / GameMap.tileSize)]
@@ -311,15 +311,15 @@ class Player {
         ) {
           // the change in y is what made it it, calculate the position hit based on the x and z
           const HIT_X: number = currentRayPositionX % GameMap.tileSize
-          const HIT_Z: number = currentRayPositionZ % GameMap.tileSize
+          const HIT_Z: number = GameMap.tileSize - (currentRayPositionZ % GameMap.tileSize)
 
-          pixelColorCode = GameMap.wallTexture[Math.floor(HIT_X / GameMap.wallBitSize)][Math.floor(HIT_Z / GameMap.wallBitSize)]
+          pixelColorCode = GameMap.wallTexture[0][Math.floor(HIT_Z / GameMap.wallBitSize)][Math.floor(HIT_X / GameMap.wallBitSize)]
         } else {
           // the change in y is what made it it, calculate the position hit based on the x and z
           const HIT_X: number = currentRayPositionX % GameMap.tileSize
           const HIT_Y: number = currentRayPositionY % GameMap.tileSize
 
-          pixelColorCode = GameMap.wallTexture[Math.floor(HIT_X / GameMap.wallBitSize)][Math.floor(HIT_Y / GameMap.wallBitSize)]
+          pixelColorCode = GameMap.wallTexture[1][Math.floor(HIT_X / GameMap.wallBitSize)][Math.floor(HIT_Y / GameMap.wallBitSize)]
         }
         return [
           Math.sqrt(

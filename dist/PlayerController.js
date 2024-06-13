@@ -6,6 +6,11 @@ class PlayerController {
     sKeyPressed = false;
     dKeyPressed = false;
     spaceKeyPressed = false;
+    // default is 1
+    _sensitivity = 0.5;
+    get sensitivity() {
+        return this._sensitivity;
+    }
     updatePlayer() {
         if (this.dKeyPressed) {
             this.player.moveRight();

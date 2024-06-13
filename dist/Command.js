@@ -3,6 +3,7 @@ import { update, ref, set
 //@ts-ignore Import module
  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
+import { Canvas } from "./Canvas.js";
 class HandleMouseClickCommand {
     mousePositionX = 0;
     mousePositionY = 0;
@@ -60,8 +61,8 @@ class HandleMouseMoveCommand {
 }
 class MainGameHandleMouseMoveCommand extends HandleMouseMoveCommand {
     execute() {
-        Game.instance.player.rotatePitch(this.dy * Game.instance.player.rotationSpeed * -1);
-        Game.instance.player.rotateYaw(this.dx * Game.instance.player.rotationSpeed);
+        Game.instance.player.rotatePitch(-this.dy * Game.instance.player.rotationSpeed * Game.instance.controller.sensitivity);
+        Game.instance.player.rotateYaw(this.dx * Game.instance.player.rotationSpeed * Game.instance.controller.sensitivity);
     }
 }
 class UpdatePlayerPositionToFirebaseCommand {
@@ -85,11 +86,29 @@ class MainGameMouseClickCommand extends HandleMouseClickCommand {
 }
 class ToggleMouseMovementCommand {
     execute() {
-        if (Game.instance.controller.mouseMoveCommand === undefined) {
-            Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand());
-        }
-        else {
-            Game.instance.controller.assignMouseMoveCommand(undefined);
+        const havePointerLock = 'pointerLockElement' in document ||
+            'mozPointerLockElement' in document ||
+            'webkitPointerLockElement' in document;
+        if (havePointerLock) {
+            if (Game.instance.controller.mouseMoveCommand === undefined) {
+                Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand());
+                Canvas.instance.screen.requestPointerLock = Canvas.instance.screen.requestPointerLock ||
+                    //@ts-ignorets-ignore
+                    Canvas.instance.screen.mozRequestPointerLock ||
+                    //@ts-ignorets-ignore
+                    Canvas.instance.screen.webkitRequestPointerLock;
+                Canvas.instance.screen.requestPointerLock();
+            }
+            else {
+                Game.instance.controller.assignMouseMoveCommand(undefined);
+                // Ask the browser to release the pointer
+                document.exitPointerLock = document.exitPointerLock ||
+                    //@ts-ignorets-ignore
+                    document.mozExitPointerLock ||
+                    //@ts-ignorets-ignore
+                    document.webkitExitPointerLock;
+                document.exitPointerLock();
+            }
         }
     }
 }
