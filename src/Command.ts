@@ -55,6 +55,7 @@ class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
 
 class StartGameCommand implements Command {
   public execute(): void {
+    Canvas.instance.screen.requestPointerLock();
     Game.instance.startGame()
     Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand())
     Game.instance.controller.assignMouseClickCommand(new MainGameMouseClickCommand())

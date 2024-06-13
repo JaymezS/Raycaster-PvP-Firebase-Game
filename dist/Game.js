@@ -20,7 +20,7 @@ class Game {
     gameLoop = undefined;
     FPS = 60;
     timeInterval = 1000 / this.FPS;
-    resolution = 8;
+    resolution = 10;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 12;
     maxRenderDistance = 8 * GameMap.tileSize;

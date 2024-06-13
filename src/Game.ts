@@ -24,7 +24,7 @@ class Game {
   private gameLoop: any = undefined;
   readonly FPS: number = 60;
   private timeInterval: number = 1000/this.FPS
-  readonly resolution: number = 8;
+  readonly resolution: number = 10;
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 12
   readonly maxRenderDistance: number = 8 * GameMap.tileSize;
