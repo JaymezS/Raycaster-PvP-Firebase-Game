@@ -149,7 +149,6 @@ class Player {
     this._x += this.velocityVector[0]
     if (this.collideWithWall()) {
       this._x -= this.velocityVector[0]
-      this.velocityVector[0] = 0
     }
   }
 
@@ -157,7 +156,6 @@ class Player {
     this._y += this.velocityVector[1]
     if (this.collideWithWall()) {
       this._y -= this.velocityVector[1]
-      this.velocityVector[1] = 0
     }
   }
 
