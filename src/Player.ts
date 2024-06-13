@@ -15,10 +15,12 @@ class Player {
   private size: number = Player.size
   private _yaw: number = 0;
   private _pitch: number = 0;
-  private _speed: number = 3
+  private _speed: number = 0
   private _rotationSpeed: number = Math.PI/180
   private _fov = Math.PI / 2; // Field of view
   public colorCode: number = Utilities.randInt(0, PIXEL_COLORS.length)
+  readonly acceleration: number = 3
+  readonly maxMovingSpeed: number = 5
 
   readonly id: string = nanoid(20);
 
@@ -26,14 +28,9 @@ class Player {
   private grounded: boolean = false;
 
   private maxPitch: number = Math.PI / 2
-  
-  
-  // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
-  // private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
-  // private zVelocity: number = this._speed * Math.sin(this._pitch)
 
-  private xVelocity: number = this._speed * Math.cos(this._yaw);
-  private yVelocity: number = this._speed * Math.sin(this._yaw);
+  private xVelocity: number = 0;
+  private yVelocity: number = 0;
   private zVelocity: number = 0
   
   public get x(): number {
@@ -68,29 +65,6 @@ class Player {
     this._pitch = angle
   }
 
-  public moveForward(): void {
-    this.updateVelocities()
-    this.move()
-  }
-
-
-  public moveRight(): void {
-    this.updateVelocities();
-    const temp: number = this.xVelocity;
-    this.xVelocity = -this.yVelocity
-    this.yVelocity = temp
-    this.move()
-  }
-
-
-  public moveLeft(): void {
-    this.updateVelocities();
-    const temp: number = this.yVelocity;
-    this.yVelocity = -this.xVelocity
-    this.xVelocity = temp
-    this.move()
-  }
-
 
   public jump(): void {
     if (this.grounded) {
@@ -113,24 +87,43 @@ class Player {
   }
 
 
-  public moveBackward(): void {
-    this.updateVelocities()
-    this.xVelocity *= -1
-    this.yVelocity *= -1
-    this.move()
+  public accelerateLeft(): void {
+    this.xVelocity += this.acceleration * Math.sin(this._yaw);
+    this.yVelocity -= this.acceleration * Math.cos(this._yaw);
+
+    this.xVelocity = this.acceleration * Math.sin(this._yaw);
+    this.yVelocity = -this.acceleration * Math.cos(this._yaw);
+  }
+  public accelerateForward(): void {
+    this.xVelocity += this.acceleration * Math.cos(this._yaw);
+    this.yVelocity += this.acceleration * Math.sin(this._yaw);
+
+    this.xVelocity = this.acceleration * Math.cos(this._yaw);
+    this.yVelocity = this.acceleration * Math.sin(this._yaw);
+  }
+  public accelerateRight(): void {
+    this.xVelocity -= this.acceleration * Math.sin(this._yaw);
+    this.yVelocity += this.acceleration * Math.cos(this._yaw);
+
+    this.xVelocity = -this.acceleration * Math.sin(this._yaw);
+    this.yVelocity = this.acceleration * Math.cos(this._yaw);
+  }
+  public accelerateBackward(): void {
+    this.xVelocity -= this.acceleration * Math.cos(this._yaw);
+    this.yVelocity -= this.acceleration * Math.sin(this._yaw);
+
+    this.xVelocity = -this.acceleration * Math.cos(this._yaw);
+    this.yVelocity = -this.acceleration * Math.sin(this._yaw);
   }
 
-  public move(): void {
-    this.moveX();
-    this.moveY();
-  }
+
+
 
   public moveX(): void {
     this._x += this.xVelocity
     if (this.collideWithWall()) {
       this._x -= this.xVelocity
     }
-    new UpdatePlayerPositionToFirebaseCommand(this).execute()
   }
 
   public moveY(): void {
@@ -138,7 +131,6 @@ class Player {
     if (this.collideWithWall()) {
       this._y -= this.yVelocity
     }
-    new UpdatePlayerPositionToFirebaseCommand(this).execute()
   }
 
   public moveZ(): void {
@@ -158,11 +150,13 @@ class Player {
     new UpdatePlayerPositionToFirebaseCommand(this).execute()
   }
 
-
-  public updateVelocities(): void {
-    this.xVelocity = this._speed * Math.cos(this._yaw);
-    this.yVelocity = this._speed * Math.sin(this._yaw);
+  public updatePosition(): void {
+    this.moveX()
+    this.moveY()
+    this.updateVerticalMovementDueToGravity()
+    new UpdatePlayerPositionToFirebaseCommand(this).execute()
   }
+
 
   public updateVerticalMovementDueToGravity(): void {
     if (!this.grounded) {
@@ -188,7 +182,6 @@ class Player {
     }
     return false;
   }
-
 
   public pointInCharacterAtLocation(px: number, py: number, pz: number, cx: number, cy: number, cz: number): boolean {
     if (

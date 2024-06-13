@@ -48,7 +48,6 @@ class Game {
     startGame() {
         this.gameLoop = setInterval(() => {
             this.updateFromDatabase();
-            this.player.updateVerticalMovementDueToGravity();
             this.controller.updatePlayer();
             this.renderForPlayer();
         }, this.timeInterval);

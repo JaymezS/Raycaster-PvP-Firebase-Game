@@ -13,20 +13,21 @@ class PlayerController {
     }
     updatePlayer() {
         if (this.dKeyPressed) {
-            this.player.moveRight();
+            this.player.accelerateRight();
         }
         if (this.aKeyPressed) {
-            this.player.moveLeft();
+            this.player.accelerateLeft();
         }
         if (this.wKeyPressed) {
-            this.player.moveForward();
+            this.player.accelerateForward();
         }
         if (this.sKeyPressed) {
-            this.player.moveBackward();
+            this.player.accelerateBackward();
         }
         if (this.spaceKeyPressed) {
             this.player.jump();
         }
+        this.player.updatePosition();
     }
     mousePositionX = 0;
     mousePositionY = 0;

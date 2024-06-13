@@ -13,18 +13,17 @@ class Player {
     size = Player.size;
     _yaw = 0;
     _pitch = 0;
-    _speed = 3;
+    _speed = 0;
     _rotationSpeed = Math.PI / 180;
     _fov = Math.PI / 2; // Field of view
     colorCode = Utilities.randInt(0, PIXEL_COLORS.length);
+    acceleration = 3;
+    maxMovingSpeed = 5;
     id = nanoid(20);
     grounded = false;
     maxPitch = Math.PI / 2;
-    // private xVelocity: number = Math.cos(this._pitch) * this._speed * Math.cos(this._yaw);
-    // private yVelocity: number = Math.cos(this._pitch) * this._speed * Math.sin(this._yaw);
-    // private zVelocity: number = this._speed * Math.sin(this._pitch)
-    xVelocity = this._speed * Math.cos(this._yaw);
-    yVelocity = this._speed * Math.sin(this._yaw);
+    xVelocity = 0;
+    yVelocity = 0;
     zVelocity = 0;
     get x() {
         return this._x;
@@ -56,24 +55,6 @@ class Player {
     set pitch(angle) {
         this._pitch = angle;
     }
-    moveForward() {
-        this.updateVelocities();
-        this.move();
-    }
-    moveRight() {
-        this.updateVelocities();
-        const temp = this.xVelocity;
-        this.xVelocity = -this.yVelocity;
-        this.yVelocity = temp;
-        this.move();
-    }
-    moveLeft() {
-        this.updateVelocities();
-        const temp = this.yVelocity;
-        this.yVelocity = -this.xVelocity;
-        this.xVelocity = temp;
-        this.move();
-    }
     jump() {
         if (this.grounded) {
             this.zVelocity = 16;
@@ -88,29 +69,41 @@ class Player {
             this._pitch += deg;
         }
     }
-    moveBackward() {
-        this.updateVelocities();
-        this.xVelocity *= -1;
-        this.yVelocity *= -1;
-        this.move();
+    accelerateLeft() {
+        this.xVelocity += this.acceleration * Math.sin(this._yaw);
+        this.yVelocity -= this.acceleration * Math.cos(this._yaw);
+        this.xVelocity = this.acceleration * Math.sin(this._yaw);
+        this.yVelocity = -this.acceleration * Math.cos(this._yaw);
     }
-    move() {
-        this.moveX();
-        this.moveY();
+    accelerateForward() {
+        this.xVelocity += this.acceleration * Math.cos(this._yaw);
+        this.yVelocity += this.acceleration * Math.sin(this._yaw);
+        this.xVelocity = this.acceleration * Math.cos(this._yaw);
+        this.yVelocity = this.acceleration * Math.sin(this._yaw);
+    }
+    accelerateRight() {
+        this.xVelocity -= this.acceleration * Math.sin(this._yaw);
+        this.yVelocity += this.acceleration * Math.cos(this._yaw);
+        this.xVelocity = -this.acceleration * Math.sin(this._yaw);
+        this.yVelocity = this.acceleration * Math.cos(this._yaw);
+    }
+    accelerateBackward() {
+        this.xVelocity -= this.acceleration * Math.cos(this._yaw);
+        this.yVelocity -= this.acceleration * Math.sin(this._yaw);
+        this.xVelocity = -this.acceleration * Math.cos(this._yaw);
+        this.yVelocity = -this.acceleration * Math.sin(this._yaw);
     }
     moveX() {
         this._x += this.xVelocity;
         if (this.collideWithWall()) {
             this._x -= this.xVelocity;
         }
-        new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     moveY() {
         this._y += this.yVelocity;
         if (this.collideWithWall()) {
             this._y -= this.yVelocity;
         }
-        new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     moveZ() {
         this._z += this.zVelocity;
@@ -130,9 +123,11 @@ class Player {
         }
         new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
-    updateVelocities() {
-        this.xVelocity = this._speed * Math.cos(this._yaw);
-        this.yVelocity = this._speed * Math.sin(this._yaw);
+    updatePosition() {
+        this.moveX();
+        this.moveY();
+        this.updateVerticalMovementDueToGravity();
+        new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     updateVerticalMovementDueToGravity() {
         if (!this.grounded) {
