@@ -4,6 +4,7 @@ import { GameMap, Colors, PIXEL_COLORS } from "./Map.js"
 //@ts-ignore Import module
 import { nanoid } from "https://cdnjs.cloudflare.com/ajax/libs/nanoid/3.3.4/nanoid.min.js";
 import { Utilities } from "./Utilities.js";
+import { VectorMath } from "./Vector.js";
 
 class Player {
 
@@ -22,6 +23,11 @@ class Player {
   readonly acceleration: number = 3
   readonly maxMovingSpeed: number = 5
 
+  public isAcceleratingLeft: boolean = false;
+  public isAcceleratingRight: boolean = false;
+  public isAcceleratingForward: boolean = false;
+  public isAcceleratingBackward: boolean = false;
+
   readonly id: string = nanoid(20);
 
 
@@ -29,9 +35,7 @@ class Player {
 
   private maxPitch: number = Math.PI / 2
 
-  private xVelocity: number = 0;
-  private yVelocity: number = 0;
-  private zVelocity: number = 0
+  private velocityVector: number[] = [0, 0, 0]
   
   public get x(): number {
     return this._x
@@ -68,7 +72,7 @@ class Player {
 
   public jump(): void {
     if (this.grounded) {
-      this.zVelocity = 16
+      this.velocityVector[2] = 16
     }
   }
 
@@ -87,63 +91,65 @@ class Player {
   }
 
 
-  public accelerateLeft(): void {
-    this.xVelocity += this.acceleration * Math.sin(this._yaw);
-    this.yVelocity -= this.acceleration * Math.cos(this._yaw);
-
-    this.xVelocity = this.acceleration * Math.sin(this._yaw);
-    this.yVelocity = -this.acceleration * Math.cos(this._yaw);
-  }
-  public accelerateForward(): void {
-    this.xVelocity += this.acceleration * Math.cos(this._yaw);
-    this.yVelocity += this.acceleration * Math.sin(this._yaw);
-
-    this.xVelocity = this.acceleration * Math.cos(this._yaw);
-    this.yVelocity = this.acceleration * Math.sin(this._yaw);
-  }
-  public accelerateRight(): void {
-    this.xVelocity -= this.acceleration * Math.sin(this._yaw);
-    this.yVelocity += this.acceleration * Math.cos(this._yaw);
-
-    this.xVelocity = -this.acceleration * Math.sin(this._yaw);
-    this.yVelocity = this.acceleration * Math.cos(this._yaw);
-  }
-  public accelerateBackward(): void {
-    this.xVelocity -= this.acceleration * Math.cos(this._yaw);
-    this.yVelocity -= this.acceleration * Math.sin(this._yaw);
-
-    this.xVelocity = -this.acceleration * Math.cos(this._yaw);
-    this.yVelocity = -this.acceleration * Math.sin(this._yaw);
+  public determineIntendedMovementDirectionVectorBasedOnAccelerationDirections(): number[] {
+    const forwardV: number[] = VectorMath.convertYawAndPitchToUnitVector([this.yaw, 0])
+    const backwardV: number[] = VectorMath.convertYawAndPitchToUnitVector([this.yaw + Math.PI, 0])
+    const leftV: number[] = VectorMath.convertYawAndPitchToUnitVector([this.yaw - Math.PI / 2, 0])
+    const rightV: number[] = VectorMath.convertYawAndPitchToUnitVector([this.yaw + Math.PI / 2, 0])
+    
+    let vectorSum: number[] = [0, 0, 0];
+    if (this.isAcceleratingBackward) {
+      vectorSum = VectorMath.addVectors(vectorSum, backwardV)
+    } 
+    if (this.isAcceleratingForward) {
+      vectorSum = VectorMath.addVectors(vectorSum, forwardV)
+    } 
+    if (this.isAcceleratingLeft) {
+      vectorSum = VectorMath.addVectors(vectorSum, leftV)
+    } 
+    if (this.isAcceleratingRight) {
+      vectorSum = VectorMath.addVectors(vectorSum, rightV)
+    } 
+    return VectorMath.convertVectorToUnitVector(vectorSum);
   }
 
 
+  public modifyVelocityVectorBasedOnIntendedVector() {
+    const INTENDED_MOVEMENT_DIRECTION: number[] =
+      this.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections();
+
+    const INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE: number[] = 
+      VectorMath.convertUnitVectorToVector(INTENDED_MOVEMENT_DIRECTION, this.maxMovingSpeed)
+    this.velocityVector[0] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[0]
+    this.velocityVector[1] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[1]
+  }
 
 
   public moveX(): void {
-    this._x += this.xVelocity
+    this._x += this.velocityVector[0]
     if (this.collideWithWall()) {
-      this._x -= this.xVelocity
+      this._x -= this.velocityVector[0]
     }
   }
 
   public moveY(): void {
-    this._y += this.yVelocity
+    this._y += this.velocityVector[1]
     if (this.collideWithWall()) {
-      this._y -= this.yVelocity
+      this._y -= this.velocityVector[1]
     }
   }
 
   public moveZ(): void {
-    this._z += this.zVelocity
+    this._z += this.velocityVector[2]
     if (this.collideWithWall()) {
-      if (this.zVelocity < 0) {
+      if (this.velocityVector[2] < 0) {
         this.grounded = true
       } else {
-        this._z -= this.zVelocity;
-        this.zVelocity = 0
+        this._z -= this.velocityVector[2];
+        this.velocityVector[2] = 0
         return
       }
-      this._z -= this.zVelocity;
+      this._z -= this.velocityVector[2];
     } else {
       this.grounded = false
     }
@@ -151,6 +157,7 @@ class Player {
   }
 
   public updatePosition(): void {
+    this.modifyVelocityVectorBasedOnIntendedVector()
     this.moveX()
     this.moveY()
     this.updateVerticalMovementDueToGravity()
@@ -160,13 +167,13 @@ class Player {
 
   public updateVerticalMovementDueToGravity(): void {
     if (!this.grounded) {
-      if (this.zVelocity <= -Game.instance.terminalVelocity) {
-        this.zVelocity = -Game.instance.terminalVelocity
+      if (this.velocityVector[2] <= -Game.instance.terminalVelocity) {
+        this.velocityVector[2] = -Game.instance.terminalVelocity
       } else {
-        this.zVelocity -= Game.instance.gravitationalAccelerationConstant;
+        this.velocityVector[2] -= Game.instance.gravitationalAccelerationConstant;
       }
-    } else if (this.zVelocity < 0) {
-      this.zVelocity = 0
+    } else if (this.velocityVector[2] < 0) {
+      this.velocityVector[2] = 0
     }
     this.moveZ()
   }

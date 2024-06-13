@@ -177,7 +177,7 @@ class Game {
         // render the pixel
         const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
         const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.7) 
-        
+
         Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},

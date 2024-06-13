@@ -4,6 +4,7 @@ import { GameMap, Colors, PIXEL_COLORS } from "./Map.js";
 //@ts-ignore Import module
 import { nanoid } from "https://cdnjs.cloudflare.com/ajax/libs/nanoid/3.3.4/nanoid.min.js";
 import { Utilities } from "./Utilities.js";
+import { VectorMath } from "./Vector.js";
 class Player {
     static size = 56;
     // note that x and y are center values
@@ -19,12 +20,14 @@ class Player {
     colorCode = Utilities.randInt(0, PIXEL_COLORS.length);
     acceleration = 3;
     maxMovingSpeed = 5;
+    isAcceleratingLeft = false;
+    isAcceleratingRight = false;
+    isAcceleratingForward = false;
+    isAcceleratingBackward = false;
     id = nanoid(20);
     grounded = false;
     maxPitch = Math.PI / 2;
-    xVelocity = 0;
-    yVelocity = 0;
-    zVelocity = 0;
+    velocityVector = [0, 0, 0];
     get x() {
         return this._x;
     }
@@ -57,7 +60,7 @@ class Player {
     }
     jump() {
         if (this.grounded) {
-            this.zVelocity = 16;
+            this.velocityVector[2] = 16;
         }
     }
     rotateYaw(deg) {
@@ -69,54 +72,56 @@ class Player {
             this._pitch += deg;
         }
     }
-    accelerateLeft() {
-        this.xVelocity += this.acceleration * Math.sin(this._yaw);
-        this.yVelocity -= this.acceleration * Math.cos(this._yaw);
-        this.xVelocity = this.acceleration * Math.sin(this._yaw);
-        this.yVelocity = -this.acceleration * Math.cos(this._yaw);
+    determineIntendedMovementDirectionVectorBasedOnAccelerationDirections() {
+        const forwardV = VectorMath.convertYawAndPitchToUnitVector([this.yaw, 0]);
+        const backwardV = VectorMath.convertYawAndPitchToUnitVector([this.yaw + Math.PI, 0]);
+        const leftV = VectorMath.convertYawAndPitchToUnitVector([this.yaw - Math.PI / 2, 0]);
+        const rightV = VectorMath.convertYawAndPitchToUnitVector([this.yaw + Math.PI / 2, 0]);
+        let vectorSum = [0, 0, 0];
+        if (this.isAcceleratingBackward) {
+            vectorSum = VectorMath.addVectors(vectorSum, backwardV);
+        }
+        if (this.isAcceleratingForward) {
+            vectorSum = VectorMath.addVectors(vectorSum, forwardV);
+        }
+        if (this.isAcceleratingLeft) {
+            vectorSum = VectorMath.addVectors(vectorSum, leftV);
+        }
+        if (this.isAcceleratingRight) {
+            vectorSum = VectorMath.addVectors(vectorSum, rightV);
+        }
+        return VectorMath.convertVectorToUnitVector(vectorSum);
     }
-    accelerateForward() {
-        this.xVelocity += this.acceleration * Math.cos(this._yaw);
-        this.yVelocity += this.acceleration * Math.sin(this._yaw);
-        this.xVelocity = this.acceleration * Math.cos(this._yaw);
-        this.yVelocity = this.acceleration * Math.sin(this._yaw);
-    }
-    accelerateRight() {
-        this.xVelocity -= this.acceleration * Math.sin(this._yaw);
-        this.yVelocity += this.acceleration * Math.cos(this._yaw);
-        this.xVelocity = -this.acceleration * Math.sin(this._yaw);
-        this.yVelocity = this.acceleration * Math.cos(this._yaw);
-    }
-    accelerateBackward() {
-        this.xVelocity -= this.acceleration * Math.cos(this._yaw);
-        this.yVelocity -= this.acceleration * Math.sin(this._yaw);
-        this.xVelocity = -this.acceleration * Math.cos(this._yaw);
-        this.yVelocity = -this.acceleration * Math.sin(this._yaw);
+    modifyVelocityVectorBasedOnIntendedVector() {
+        const INTENDED_MOVEMENT_DIRECTION = this.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections();
+        const INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE = VectorMath.convertUnitVectorToVector(INTENDED_MOVEMENT_DIRECTION, this.maxMovingSpeed);
+        this.velocityVector[0] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[0];
+        this.velocityVector[1] = INTENDED_MOVEMENT_DIRECTION_WITH_MAGNITUDE[1];
     }
     moveX() {
-        this._x += this.xVelocity;
+        this._x += this.velocityVector[0];
         if (this.collideWithWall()) {
-            this._x -= this.xVelocity;
+            this._x -= this.velocityVector[0];
         }
     }
     moveY() {
-        this._y += this.yVelocity;
+        this._y += this.velocityVector[1];
         if (this.collideWithWall()) {
-            this._y -= this.yVelocity;
+            this._y -= this.velocityVector[1];
         }
     }
     moveZ() {
-        this._z += this.zVelocity;
+        this._z += this.velocityVector[2];
         if (this.collideWithWall()) {
-            if (this.zVelocity < 0) {
+            if (this.velocityVector[2] < 0) {
                 this.grounded = true;
             }
             else {
-                this._z -= this.zVelocity;
-                this.zVelocity = 0;
+                this._z -= this.velocityVector[2];
+                this.velocityVector[2] = 0;
                 return;
             }
-            this._z -= this.zVelocity;
+            this._z -= this.velocityVector[2];
         }
         else {
             this.grounded = false;
@@ -124,6 +129,7 @@ class Player {
         new UpdatePlayerPositionToFirebaseCommand(this).execute();
     }
     updatePosition() {
+        this.modifyVelocityVectorBasedOnIntendedVector();
         this.moveX();
         this.moveY();
         this.updateVerticalMovementDueToGravity();
@@ -131,15 +137,15 @@ class Player {
     }
     updateVerticalMovementDueToGravity() {
         if (!this.grounded) {
-            if (this.zVelocity <= -Game.instance.terminalVelocity) {
-                this.zVelocity = -Game.instance.terminalVelocity;
+            if (this.velocityVector[2] <= -Game.instance.terminalVelocity) {
+                this.velocityVector[2] = -Game.instance.terminalVelocity;
             }
             else {
-                this.zVelocity -= Game.instance.gravitationalAccelerationConstant;
+                this.velocityVector[2] -= Game.instance.gravitationalAccelerationConstant;
             }
         }
-        else if (this.zVelocity < 0) {
-            this.zVelocity = 0;
+        else if (this.velocityVector[2] < 0) {
+            this.velocityVector[2] = 0;
         }
         this.moveZ();
     }

@@ -13,16 +13,28 @@ class PlayerController {
     }
     updatePlayer() {
         if (this.dKeyPressed) {
-            this.player.accelerateRight();
+            this.player.isAcceleratingRight = true;
+        }
+        else {
+            this.player.isAcceleratingRight = false;
         }
         if (this.aKeyPressed) {
-            this.player.accelerateLeft();
+            this.player.isAcceleratingLeft = true;
+        }
+        else {
+            this.player.isAcceleratingLeft = false;
         }
         if (this.wKeyPressed) {
-            this.player.accelerateForward();
+            this.player.isAcceleratingForward = true;
+        }
+        else {
+            this.player.isAcceleratingForward = false;
         }
         if (this.sKeyPressed) {
-            this.player.accelerateBackward();
+            this.player.isAcceleratingBackward = true;
+        }
+        else {
+            this.player.isAcceleratingBackward = false;
         }
         if (this.spaceKeyPressed) {
             this.player.jump();

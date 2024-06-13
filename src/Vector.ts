@@ -7,6 +7,9 @@ class VectorMath {
 
   public static convertVectorToUnitVector(v: number[]): number[] {
     const MAG: number = VectorMath.getMagnitude(v)
+    if (MAG === 0) {
+      return [0, 0, 0]
+    }
     return [v[0] / MAG, v[1] / MAG, v[2] / MAG];
   }
 

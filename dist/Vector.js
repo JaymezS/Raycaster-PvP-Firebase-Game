@@ -4,6 +4,9 @@ class VectorMath {
     }
     static convertVectorToUnitVector(v) {
         const MAG = VectorMath.getMagnitude(v);
+        if (MAG === 0) {
+            return [0, 0, 0];
+        }
         return [v[0] / MAG, v[1] / MAG, v[2] / MAG];
     }
     static convertYawAndPitchToUnitVector(angles) {
