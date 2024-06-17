@@ -1,6 +1,6 @@
 import { PlayerController } from "./PlayerController.js";
 import { Canvas } from "./Canvas.js";
-import { DisplayMenuAndSetMouseControllerCommand, RemoveClientPlayerFromDatabaseCommand, StartGameCommand } from "./Command.js";
+import { DisplayMenuAndSetMouseControllerCommand, ExitGameCommand, LockPointerCommand, RemoveBulletFromFirebaseCommand, RemoveClientPlayerFromDatabaseCommand, RenderViewForPlayerCommand, StartGameCommand, UpdateBulletPositionToFirebaseCommand } from "./Command.js";
 import { Utilities } from "./Utilities.js";
 import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
@@ -18,16 +18,30 @@ class Game {
     controller = new PlayerController(this.player);
     context = Canvas.instance.context;
     gameLoop = undefined;
-    FPS = 60;
+    FPS = 30;
     timeInterval = 1000 / this.FPS;
-    resolution = 10;
+    resolution = 20;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 12;
     maxRenderDistance = 8 * GameMap.tileSize;
-    mainMenu = new CompositeMenu("main menu");
+    pauseMenuBrightnessMultiplier = 0.1;
+    defaultBrightnessMultiplier = 0.9;
+    brightnessMultiplier = this.defaultBrightnessMultiplier;
+    spawnLocation = [GameMap.tileSize * 1.5, GameMap.tileSize * 1.5, GameMap.tileSize * 1.9];
+    spawnDirection = [0, 0];
+    isPaused = true;
+    _mainMenu = new CompositeMenu("JamesCraft");
+    pauseMenu = new CompositeMenu("Game Paused");
+    bulletsBySelf = [];
+    bulletsToRemove = [];
     otherPlayers = {};
+    allBullets = {};
+    get mainMenu() {
+        return this._mainMenu;
+    }
     constructor() {
         this.composeMainMenu();
+        this.composePauseMenu();
         window.addEventListener("beforeunload", function (e) {
             Game.instance.endGame();
             new RemoveClientPlayerFromDatabaseCommand().execute();
@@ -44,28 +58,86 @@ class Game {
                 delete this.otherPlayers[this.player.id];
             }
         }, { onlyOnce: true });
+        onValue(ref(FirebaseClient.instance.db, "/bullets"), (snapshot) => {
+            if (snapshot.val()) {
+                this.allBullets = snapshot.val();
+            }
+        }, { onlyOnce: true });
+    }
+    updateOwnBulletsAndUpdateToFirebase() {
+        for (let i = 0; i < this.bulletsBySelf.length; i++) {
+            const bullet = this.bulletsBySelf[i];
+            bullet.updatePosition();
+            new UpdateBulletPositionToFirebaseCommand(bullet).execute();
+            if (bullet.collideWithWall()) {
+                this.bulletsBySelf.splice(i, 1);
+                this.bulletsToRemove.push(bullet);
+            }
+            for (let i = 0; i < this.bulletsToRemove.length; i++) {
+                const B = this.bulletsToRemove[i];
+                if (this.allBullets[B.id]) {
+                    new RemoveBulletFromFirebaseCommand(this.bulletsToRemove[i]).execute();
+                    this.bulletsToRemove.splice(i, 1);
+                }
+            }
+        }
     }
     startGame() {
+        this.player.setLocation(this.spawnLocation);
+        this.player.setDirection(this.spawnDirection);
         this.gameLoop = setInterval(() => {
+            const TIME = performance.now();
             this.updateFromDatabase();
-            this.controller.updatePlayer();
+            this.player.updatePosition();
+            this.updateOwnBulletsAndUpdateToFirebase();
             this.renderForPlayer();
+            this.renderPlayerUI();
+            if (this.isPaused) {
+                new DisplayMenuAndSetMouseControllerCommand(this.pauseMenu).execute();
+            }
+            // displays FPS
+            this.context.font = "24px Arial";
+            this.context.fillStyle = "white";
+            this.context.fillText(`MAX FPS: ${Math.round(1000 / (performance.now() - TIME))}`, 50, 50);
         }, this.timeInterval);
     }
     composeMainMenu() {
         const START_BUTTON = new MenuButton(Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2, Canvas.HEIGHT / 2 - MenuButton.buttonHeight / 2, "start game");
         START_BUTTON.addCommand(new StartGameCommand());
-        this.mainMenu.addMenuButton(START_BUTTON);
+        this._mainMenu.addMenuButton(START_BUTTON);
+    }
+    composePauseMenu() {
+        const RESUME_BUTTON = new MenuButton(Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2, Canvas.HEIGHT / 2 - MenuButton.buttonHeight * 2, "Resume Game");
+        RESUME_BUTTON.addCommand(new LockPointerCommand());
+        const EXIT_BUTTON = new MenuButton(Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2, Canvas.HEIGHT / 2 + MenuButton.buttonHeight, "Exit Game");
+        EXIT_BUTTON.addCommand(new ExitGameCommand());
+        this.pauseMenu.addMenuButton(RESUME_BUTTON);
+        this.pauseMenu.addMenuButton(EXIT_BUTTON);
+        this.pauseMenu.assignRenderBackgroundCommand(new RenderViewForPlayerCommand());
     }
     endGame() {
+        this.isPaused = true;
+        this.controller.assignEscKeyPressedCommand(undefined);
+        this.brightnessMultiplier = Game.instance.pauseMenuBrightnessMultiplier;
+        this.controller.clearInput();
         clearInterval(this.gameLoop);
+        new RemoveClientPlayerFromDatabaseCommand().execute();
+        this.player.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections();
     }
     clearScreen() {
         this.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
     }
+    renderPlayerUI() {
+        // Draw crosshair
+        Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2, Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2, "white");
+        Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2 + 1, Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2 + 1, "white");
+        Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2 - 1, Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2 - 1, "white");
+        Utilities.drawLine(Canvas.WIDTH / 2, Canvas.HEIGHT / 2 - 10, Canvas.WIDTH / 2, Canvas.HEIGHT / 2 + 10, "white");
+        Utilities.drawLine(Canvas.WIDTH / 2 + 1, Canvas.HEIGHT / 2 - 10, Canvas.WIDTH / 2 + 1, Canvas.HEIGHT / 2 + 10, "white");
+        Utilities.drawLine(Canvas.WIDTH / 2 - 1, Canvas.HEIGHT / 2 - 10, Canvas.WIDTH / 2 - 1, Canvas.HEIGHT / 2 + 10, "white");
+    }
     renderForPlayer() {
         this.clearScreen();
-        const TIME = performance.now();
         const ADJACENT_LENGTH_MAGNITUDE = (Canvas.WIDTH / 2) / Math.tan(this.player.fov / 2);
         const PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR = VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch]);
         const PLAYER_TO_VIEWPORT_CENTER_VECTOR = VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE);
@@ -113,12 +185,11 @@ class Game {
                 let viewportTopLeftToPointVector = VectorMath.addVectors(VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, x), VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, y));
                 let vectorFromPlayerToPoint = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector);
                 let rayAngles = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint);
-                // replace with angles[0] and angles[1] later
-                const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngles[0], rayAngles[1]);
+                const RAW_RAY_DISTANCE = this.player.castBlockVisionRayVersion2(rayAngles[0], rayAngles[1]);
                 // custom shading
                 // render the pixel
                 const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
-                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.7);
+                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 1) * this.brightnessMultiplier;
                 Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},
@@ -126,11 +197,6 @@ class Game {
           )`);
             }
         }
-        const TIME_TWO = performance.now();
-        const TIME_DIFF = TIME_TWO - TIME;
-        this.context.font = "24px Arial";
-        this.context.fillStyle = "white";
-        this.context.fillText(`MAX FPS: ${Math.round(1000 / TIME_DIFF)}`, 50, 50);
     }
     static get instance() {
         if (Game._instance === undefined) {

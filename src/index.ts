@@ -1,5 +1,6 @@
 import { Canvas } from "./Canvas.js"
 import { Game } from "./Game.js"
+import { MouseLockClient } from "./MouseLockClient.js"
 import { VectorMath } from "./Vector.js"
 
 class Driver {
@@ -19,3 +20,6 @@ window.Game = Game
 
 //@ts-ignorets-ignore
 window.VectorMath = VectorMath
+
+//@ts-ignorets-ignore
+window.MouseLockClient = MouseLockClient

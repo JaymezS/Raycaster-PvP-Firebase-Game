@@ -1,15 +1,21 @@
-import { HandleMouseClickCommand, HandleMouseMoveCommand } from "./Command.js";
+import { HandleMouseClickCommand, HandleMouseMoveCommand, Command } from "./Command.js";
 import { Canvas } from "./Canvas.js";
 import { Player } from "./Player.js";
+import { MouseLockClient } from "./MouseLockClient.js";
+import { Game } from "./Game.js";
+
 
 
 
 class PlayerController {
-  private wKeyPressed: boolean = false;
-  private aKeyPressed: boolean = false;
-  private sKeyPressed: boolean = false;
-  private dKeyPressed: boolean = false;
-  private spaceKeyPressed: boolean = false;
+  private _wKeyPressed: boolean = false;
+  private _aKeyPressed: boolean = false;
+  private _sKeyPressed: boolean = false;
+  private _dKeyPressed: boolean = false;
+  private _escKeyPressed: boolean = false
+  private _spaceKeyPressed: boolean = false;
+
+  readonly mouseLockClient: MouseLockClient = new MouseLockClient()
 
   // default is 1
   private _sensitivity: number = 0.5;
@@ -18,38 +24,40 @@ class PlayerController {
     return this._sensitivity
   }
 
-  public updatePlayer() {
-    if (this.dKeyPressed) {
-      this.player.isAcceleratingRight = true
-    } else {
-      this.player.isAcceleratingRight = false
-    }
-    if (this.aKeyPressed) {
-      this.player.isAcceleratingLeft = true
-    } else {
-      this.player.isAcceleratingLeft = false
-    }
-    if (this.wKeyPressed) {
-      this.player.isAcceleratingForward = true
-    } else {
-      this.player.isAcceleratingForward = false
-    }
-    if (this.sKeyPressed) {
-      this.player.isAcceleratingBackward = true
-    } else {
-      this.player.isAcceleratingBackward = false
-    }
-    if (this.spaceKeyPressed) {
-      this.player.jump();
-    }
-    this.player.updatePosition()
+  public get wKeyPressed(): boolean {
+    return this._wKeyPressed
+  }
+
+  
+  public get aKeyPressed(): boolean {
+    return this._aKeyPressed
+  }
+
+  
+  public get dKeyPressed(): boolean {
+    return this._dKeyPressed
+  }
+
+  
+  public get sKeyPressed(): boolean {
+    return this._sKeyPressed
+  }
+
+  public get spaceKeyPressed(): boolean {
+    return this._spaceKeyPressed
+  }
+
+  public get escKeyPressed(): boolean {
+    return this._escKeyPressed;
   }
 
   protected mousePositionX: number = 0;
   protected mousePositionY: number = 0;
   private _mouseClickCommand: HandleMouseClickCommand | undefined;
-  private _mouseMoveCommand: HandleMouseMoveCommand | undefined
+  private _mouseMoveCommand: HandleMouseMoveCommand | undefined;
 
+  private _escKeyPressedCommand: Command | undefined;
+  private _pointerLockChangeCommand: Command | undefined;
 
   public get mouseClickCommand(): HandleMouseClickCommand | undefined {
     return this._mouseClickCommand
@@ -62,51 +70,85 @@ class PlayerController {
 
   constructor(readonly player: Player) {
     document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
+    document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e))
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'd') {
-        this.dKeyPressed = true;
+        this._dKeyPressed = true;
       }
       if (e.key === 'a') {
-        this.aKeyPressed = true;
+        this._aKeyPressed = true;
       }
       if (e.key === 'w') {
-        this.wKeyPressed = true;
+        this._wKeyPressed = true;
       }
       if (e.key === 's') {
-        this.sKeyPressed = true;
+        this._sKeyPressed = true;
       }
       if (e.key === " ") {
-        this.spaceKeyPressed = true;
+        this._spaceKeyPressed = true;
+      }
+      if (e.key === "Escape") {
+        this._escKeyPressed = true
       }
     });
 
     document.addEventListener('keyup', (e) => {
       if (e.key === 'd') {
-        this.dKeyPressed = false;
+        this._dKeyPressed = false;
       }
       if (e.key === 'a') {
-        this.aKeyPressed = false;
+        this._aKeyPressed = false;
       }
       if (e.key === 'w') {
-        this.wKeyPressed = false;
+        this._wKeyPressed = false;
       }
       if (e.key === 's') {
-        this.sKeyPressed = false;
+        this._sKeyPressed = false;
       } 
       if (e.key === " ") {
-        this.spaceKeyPressed = false
+        this._spaceKeyPressed = false
+      }
+      if (e.key === "Escape") {
+        if (this._escKeyPressed === true && this._escKeyPressedCommand !== undefined) {
+          this._escKeyPressedCommand.execute()
+        }
+        this._escKeyPressed = false;
       }
     });
 
-    document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e))
+    document.addEventListener("pointerlockchange", (e) => {
+      if (this._pointerLockChangeCommand !== undefined) {
+        this._pointerLockChangeCommand.execute()
+      }
+    })
   }
+
+
+  public clearInput() {
+    this._aKeyPressed = false;
+    this._wKeyPressed = false;
+    this._sKeyPressed = false;
+    this._dKeyPressed = false;
+    this._spaceKeyPressed = false;
+    this._escKeyPressed = false;
+  }
+
 
   public assignMouseClickCommand(c: HandleMouseClickCommand | undefined) {
     this._mouseClickCommand = c;
   }
 
+  public assignEscKeyPressedCommand(c: Command | undefined): void {
+    this._escKeyPressedCommand = c
+  } 
+
   public assignMouseMoveCommand(c: HandleMouseMoveCommand | undefined) {
     this._mouseMoveCommand = c
+  }
+
+  public assignPointerLockChangeCommand(c: Command | undefined) {
+    this._pointerLockChangeCommand = c
   }
 
   private handleMouseMoveEvent(event: MouseEvent) {
@@ -134,9 +176,7 @@ class PlayerController {
       this.mousePositionX >= 0 &&
       this.mousePositionY >= 0
     ) {
-      if (this._mouseClickCommand === undefined) {
-        throw new Error("no on click command assigned");
-      } else {
+      if (this._mouseClickCommand !== undefined) {
         this._mouseClickCommand
           .assignCoordinates(this.mousePositionX, this.mousePositionY)
           .execute();

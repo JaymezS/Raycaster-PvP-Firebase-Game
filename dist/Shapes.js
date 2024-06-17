@@ -30,4 +30,4 @@ class Rectangle {
     }
 }
 export { Rectangle };
-//# sourceMappingURL=Rectangle.js.map
+//# sourceMappingURL=Shapes.js.map

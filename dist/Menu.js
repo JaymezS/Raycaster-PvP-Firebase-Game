@@ -1,4 +1,4 @@
-import { Rectangle } from "./Rectangle.js";
+import { Rectangle } from "./Shapes.js";
 import { Canvas } from "./Canvas.js";
 class MenuButton extends Rectangle {
     title;
@@ -52,12 +52,16 @@ class CompositeMenu {
     title;
     _buttons = [];
     command;
+    renderBackgroundCommand;
     constructor(title) {
         this.title = title;
     }
     addCommand(c) {
         this.command = c;
         return this;
+    }
+    assignRenderBackgroundCommand(c) {
+        this.renderBackgroundCommand = c;
     }
     get buttons() {
         return this._buttons;
@@ -80,7 +84,12 @@ class CompositeMenu {
         return this;
     }
     drawMenuAndMenuButtons() {
-        Canvas.instance.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
+        if (this.renderBackgroundCommand === undefined) {
+            Canvas.instance.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
+        }
+        else {
+            this.renderBackgroundCommand.execute();
+        }
         const TEXT_WIDTH = 20 * this.title.length;
         Canvas.instance.context.fillStyle = "blue";
         Canvas.instance.context.font = "40px Arial";

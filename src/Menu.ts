@@ -1,5 +1,5 @@
 import { Command } from "./Command.js";
-import { Rectangle } from "./Rectangle.js";
+import { Rectangle } from "./Shapes.js";
 import { Canvas } from "./Canvas.js";
 
 
@@ -78,12 +78,17 @@ class MenuButton extends Rectangle implements MenuProperties {
 class CompositeMenu implements MenuProperties {
   protected _buttons: MenuButton[] = [];
   protected command: Command | undefined;
-  
+  protected renderBackgroundCommand: Command | undefined
+
   constructor(protected title: string) { }
 
   public addCommand(c: Command): CompositeMenu {
     this.command = c;
     return this;
+  }
+
+  public assignRenderBackgroundCommand(c: Command) {
+    this.renderBackgroundCommand = c
   }
 
   public get buttons(): MenuButton[] {
@@ -110,7 +115,11 @@ class CompositeMenu implements MenuProperties {
   }
 
   public drawMenuAndMenuButtons(): void {
-    Canvas.instance.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
+    if (this.renderBackgroundCommand === undefined) {
+      Canvas.instance.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
+    } else {
+      this.renderBackgroundCommand.execute()
+    }
     const TEXT_WIDTH: number = 20 * this.title.length;
     Canvas.instance.context.fillStyle = "blue";
     Canvas.instance.context.font = "40px Arial";

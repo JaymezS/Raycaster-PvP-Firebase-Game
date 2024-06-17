@@ -1,6 +1,6 @@
 import { PlayerController } from "./PlayerController.js";
 import { Canvas } from "./Canvas.js";
-import { DisplayMenuAndSetMouseControllerCommand, RemoveClientPlayerFromDatabaseCommand, StartGameCommand } from "./Command.js";
+import { DisplayMenuAndSetMouseControllerCommand, ExitGameCommand, LockPointerCommand, RemoveBulletFromFirebaseCommand, RemoveClientPlayerFromDatabaseCommand, RenderViewForPlayerCommand, StartGameCommand, TogglePauseCommand, UpdateBulletPositionToFirebaseCommand } from "./Command.js";
 import { Utilities } from "./Utilities.js";
 import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
@@ -12,8 +12,8 @@ import {
   //@ts-ignore Import module
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
-import { VectorMath } from "./Vector.js";
-
+import { Vector, VectorMath, Direction, Position } from "./Vector.js";
+import { Bullet } from "./Bullet.js";
 
 class Game {
   private static _instance: Game | undefined;
@@ -22,24 +22,43 @@ class Game {
   readonly controller: PlayerController = new PlayerController(this.player)
   private context = Canvas.instance.context;
   private gameLoop: any = undefined;
-  readonly FPS: number = 60;
+  readonly FPS: number = 30;
   private timeInterval: number = 1000/this.FPS
-  readonly resolution: number = 10;
+  readonly resolution: number = 20;
   readonly gravitationalAccelerationConstant: number = 1
   readonly terminalVelocity: number = 12
   readonly maxRenderDistance: number = 8 * GameMap.tileSize;
+  readonly pauseMenuBrightnessMultiplier: number = 0.1
+  readonly defaultBrightnessMultiplier: number = 0.9;
+  public brightnessMultiplier: number = this.defaultBrightnessMultiplier;
+
+  public spawnLocation: Position = [GameMap.tileSize * 1.5, GameMap.tileSize * 1.5, GameMap.tileSize * 1.9]
+  public spawnDirection: Direction = [0, 0]
+
+  public isPaused: boolean = true;
   
-  private mainMenu: CompositeMenu = new CompositeMenu("main menu")
+  private _mainMenu: CompositeMenu = new CompositeMenu("JamesCraft")
+  private pauseMenu: CompositeMenu = new CompositeMenu("Game Paused")
+
+  public bulletsBySelf: Bullet[] = [];
+  public bulletsToRemove: Bullet[] = [];
 
   public otherPlayers = {}
+  public allBullets = {}
+
+  public get mainMenu(): CompositeMenu {
+    return this._mainMenu
+  }
+
 
   private constructor() {
     this.composeMainMenu()
+    this.composePauseMenu()
 
     window.addEventListener("beforeunload", function (e) {
       Game.instance.endGame()
       new RemoveClientPlayerFromDatabaseCommand().execute()
-      });
+    });
   }
 
   public start() {
@@ -59,13 +78,65 @@ class Game {
       },
       { onlyOnce: true }
     );
+
+    onValue(
+      ref(FirebaseClient.instance.db, "/bullets"), 
+      (snapshot) => {
+        if (snapshot.val()) {
+          this.allBullets = snapshot.val()
+        }
+      },
+      { onlyOnce: true }
+    )
   }
 
+
+  public updateOwnBulletsAndUpdateToFirebase(): void {
+    for (let i = 0; i < this.bulletsBySelf.length; i++) {
+      const bullet: Bullet = this.bulletsBySelf[i]
+      bullet.updatePosition();
+      new UpdateBulletPositionToFirebaseCommand(bullet).execute()
+
+      if (bullet.collideWithWall()) {
+        this.bulletsBySelf.splice(i, 1);
+        this.bulletsToRemove.push(bullet)
+      }
+
+      for (let i = 0; i < this.bulletsToRemove.length; i++) {
+        const B: Bullet = this.bulletsToRemove[i]
+        if (this.allBullets[B.id]) {
+          new RemoveBulletFromFirebaseCommand(this.bulletsToRemove[i]).execute()
+          this.bulletsToRemove.splice(i, 1)
+        }
+      }
+    }
+  }
+
+
   public startGame() {
+    this.player.setLocation(this.spawnLocation)
+    this.player.setDirection(this.spawnDirection)
+
     this.gameLoop = setInterval(() => {
+      const TIME: number = performance.now()
       this.updateFromDatabase()
-      this.controller.updatePlayer()
+      this.player.updatePosition()
+      this.updateOwnBulletsAndUpdateToFirebase()
       this.renderForPlayer()
+
+      this.renderPlayerUI()
+
+      if (this.isPaused) {
+        new DisplayMenuAndSetMouseControllerCommand(this.pauseMenu).execute()
+      }
+
+
+
+
+      // displays FPS
+      this.context.font = "24px Arial"
+      this.context.fillStyle = "white"
+      this.context.fillText(`MAX FPS: ${Math.round(1000 / (performance.now()-TIME))}`, 50, 50)
     }, this.timeInterval);
   }
 
@@ -76,35 +147,71 @@ class Game {
       "start game"
     )
     START_BUTTON.addCommand(new StartGameCommand())
-    this.mainMenu.addMenuButton(START_BUTTON)
+    this._mainMenu.addMenuButton(START_BUTTON)
+  }
+
+
+  public composePauseMenu(): void {
+    
+    const RESUME_BUTTON: MenuButton = new MenuButton(
+      Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
+      Canvas.HEIGHT / 2 - MenuButton.buttonHeight * 2,
+      "Resume Game"
+    )
+    RESUME_BUTTON.addCommand(new LockPointerCommand())
+
+    const EXIT_BUTTON: MenuButton = new MenuButton(
+      Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
+      Canvas.HEIGHT / 2 + MenuButton.buttonHeight,
+      "Exit Game"
+    )
+    EXIT_BUTTON.addCommand(new ExitGameCommand())
+    this.pauseMenu.addMenuButton(RESUME_BUTTON);
+    this.pauseMenu.addMenuButton(EXIT_BUTTON);
+    this.pauseMenu.assignRenderBackgroundCommand(new RenderViewForPlayerCommand())
   }
 
   public endGame() {
-    clearInterval(this.gameLoop)
+    this.isPaused = true
+    this.controller.assignEscKeyPressedCommand(undefined)
+    this.brightnessMultiplier = Game.instance.pauseMenuBrightnessMultiplier
+    this.controller.clearInput();
+    clearInterval(this.gameLoop);
+    new RemoveClientPlayerFromDatabaseCommand().execute()
+    this.player.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections()
   }
 
   private clearScreen(): void {
     this.context.clearRect(0, 0, Canvas.WIDTH, Canvas.HEIGHT);
   }
 
+  private renderPlayerUI(): void {
 
+    // Draw crosshair
+    Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2, Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2, "white");
+    Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2 +1 , Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2 +1, "white");
+    Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2 -1 , Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2 -1, "white");
 
-  public renderForPlayer() {
+    Utilities.drawLine(Canvas.WIDTH / 2, Canvas.HEIGHT / 2 - 10, Canvas.WIDTH / 2, Canvas.HEIGHT / 2 + 10, "white");
+    Utilities.drawLine(Canvas.WIDTH / 2 +1, Canvas.HEIGHT / 2-10, Canvas.WIDTH / 2 +1, Canvas.HEIGHT / 2+10, "white");
+    Utilities.drawLine(Canvas.WIDTH / 2 -1, Canvas.HEIGHT / 2-10, Canvas.WIDTH / 2-1, Canvas.HEIGHT / 2+10, "white");
+  }
+
+  private renderForPlayer() {
     this.clearScreen()
-    const TIME: number = performance.now()
 
     const ADJACENT_LENGTH_MAGNITUDE: number = (Canvas.WIDTH / 2) / Math.tan(this.player.fov / 2)
-    const PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR: number[] =
+    const PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR: Vector =
       VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch])
-    const PLAYER_TO_VIEWPORT_CENTER_VECTOR: number[] =
+    const PLAYER_TO_VIEWPORT_CENTER_VECTOR: Vector =
       VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE)
     
     // 1 unit vector from the left of the view port to the right
-    const PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR: number[] = 
+    const PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR: Vector = 
       VectorMath.convertYawAndPitchToUnitVector([this.player.yaw + Math.PI / 2, 0])
     
     // 1 unit vector from the top of the viewport to the bottom
-    let PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR: number[]
+    let PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR: Vector
     
     if (this.player.pitch >= 0) {
       PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR =
@@ -115,7 +222,7 @@ class Game {
     }
     // bruh opposite direction != -1 * yaw, was stuck for 2 hours
 
-    let playerToViewportTopLeftVector: number[] = VectorMath.addVectors(
+    let playerToViewportTopLeftVector: Vector = VectorMath.addVectors(
       PLAYER_TO_VIEWPORT_CENTER_VECTOR,
       VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, -Canvas.WIDTH/2)
     )
@@ -162,21 +269,20 @@ class Game {
         
 
 
-        let viewportTopLeftToPointVector: number[] =
+        let viewportTopLeftToPointVector: Vector =
           VectorMath.addVectors(
             VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, x),
             VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, y)
           );
-        let vectorFromPlayerToPoint: number[] = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector)
-        let rayAngles: number[] = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint)
+        let vectorFromPlayerToPoint: Vector = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector)
+        let rayAngles: Direction = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint)
 
-        // replace with angles[0] and angles[1] later
-        const RAW_RAY_DISTANCE = this.player.castBlockVisionRay(rayAngles[0], rayAngles[1]);
+        const RAW_RAY_DISTANCE: number[] = this.player.castBlockVisionRayVersion2(rayAngles[0], rayAngles[1]);
         
         // custom shading
         // render the pixel
-        const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
-        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 0.7) 
+        const COLOR: number[] = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
+        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 1) * this.brightnessMultiplier
 
         Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
@@ -185,13 +291,8 @@ class Game {
           )`)
       }
     }
-    
-    const TIME_TWO: number = performance.now()
-    const TIME_DIFF: number = TIME_TWO - TIME;
-    this.context.font = "24px Arial"
-    this.context.fillStyle = "white"
-    this.context.fillText(`MAX FPS: ${Math.round(1000 / TIME_DIFF)}`, 50, 50)
   }
+
   
   public static get instance(): Game {
     if (Game._instance === undefined) {
