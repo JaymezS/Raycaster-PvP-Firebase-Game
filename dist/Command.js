@@ -1,5 +1,5 @@
 import { Game } from "./Game.js";
-import { update, ref, set
+import { update, ref, set,
 //@ts-ignore Import module
  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { FirebaseClient } from "./FirebaseClient.js";
@@ -12,6 +12,13 @@ import { Bullet } from "./Bullet.js";
 class HandleMouseClickCommand {
     mousePositionX = 0;
     mousePositionY = 0;
+    rightClick = false;
+    assignType(type) {
+        if (type === 2) {
+            this.rightClick = true;
+        }
+        return this;
+    }
     // either do this or get the coordinates directly from controller in the execute
     // (if having an extra method in commands are not allowed)
     assignCoordinates(x, y) {
@@ -22,7 +29,13 @@ class HandleMouseClickCommand {
 }
 class MainGameMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
     execute() {
-        new ShootBulletCommand(Game.instance.player).execute();
+        if (this.rightClick) {
+            new ShootBulletCommand(Game.instance.player).execute();
+            this.rightClick = false;
+        }
+        else {
+            new ToggleLaserCommand().execute();
+        }
     }
 }
 class MenuMouseClickedEventHandlerCommand extends HandleMouseClickCommand {
@@ -53,7 +66,17 @@ class ExitGameCommand {
     execute() {
         Game.instance.endGame();
         new UnsetMainGameControlsCommand().execute();
-        new DisplayMenuAndSetMouseControllerCommand(Game.instance.mainMenu).execute();
+    }
+}
+class ExitGameThenDisplayMenuCommand extends ExitGameCommand {
+    menu;
+    constructor(menu) {
+        super();
+        this.menu = menu;
+    }
+    execute() {
+        super.execute();
+        new DisplayMenuAndSetMouseControllerCommand(this.menu).execute();
     }
 }
 class ShootBulletCommand {
@@ -62,8 +85,28 @@ class ShootBulletCommand {
         this.player = player;
     }
     execute() {
-        const NEW_BULLET = new Bullet(this.player);
-        Game.instance.bulletsBySelf.push(NEW_BULLET);
+        if (this.player.canShoot) {
+            Game.instance.player.ammoGauge.useFuel(Bullet.fuelCost);
+            const NEW_BULLET = new Bullet(this.player);
+            new UploadBulletToFirebaseCommand(NEW_BULLET).execute();
+            Game.instance.bulletsBySelf.push(NEW_BULLET);
+            this.player.resetShootingCooldown();
+        }
+    }
+}
+class DisplayTextCommand {
+    text;
+    x;
+    y;
+    maxW;
+    constructor(text, x, y, maxW) {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.maxW = maxW;
+    }
+    execute() {
+        Utilities.writeLargeText(this.text, this.x, this.y, this.maxW);
     }
 }
 class RenderViewForPlayerCommand {
@@ -92,7 +135,7 @@ class RenderViewForPlayerCommand {
                 let viewportTopLeftToPointVector = VectorMath.addVectors(VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, x), VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, y));
                 let vectorFromPlayerToPoint = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector);
                 let rayAngles = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint);
-                const RAW_RAY_DISTANCE = Game.instance.player.castBlockVisionRayVersion2(rayAngles[0], rayAngles[1]);
+                const RAW_RAY_DISTANCE = Game.instance.player.castBlockVisionRayVersion3(rayAngles[0], rayAngles[1]);
                 // custom shading
                 // render the pixel
                 const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
@@ -208,16 +251,36 @@ class UpdateBulletPositionToFirebaseCommand {
         });
     }
 }
-class RemoveBulletFromFirebaseCommand {
-    bullet;
-    constructor(bullet) {
-        this.bullet = bullet;
+class UpdateLaserToFirebaseCommand {
+    laser;
+    constructor(laser) {
+        this.laser = laser;
+    }
+    execute() {
+        update(ref(FirebaseClient.instance.db, `/lasers/${this.laser.id}`), {
+            position: this.laser.position,
+            direction: this.laser.directionVector,
+            isOn: this.laser.isOn,
+            id: this.laser.id,
+            sourcePlayerID: this.laser.sourcePlayerID
+        });
+    }
+}
+class RemoveOwnLaserFromFirebaseCommand {
+    execute() {
+        set(ref(FirebaseClient.instance.db, `/lasers`), Game.instance.otherLasers);
+    }
+}
+class RemoveBulletFromFirebaseByIDCommand {
+    bulletid;
+    constructor(bulletid) {
+        this.bulletid = bulletid;
     }
     execute() {
         const BULLETS = Object.values(Game.instance.allBullets);
         for (let i = 0; i < BULLETS.length; i++) {
-            if (BULLETS[i].id === this.bullet.id) {
-                delete Game.instance.allBullets[this.bullet.id];
+            if (BULLETS[i].id === this.bulletid) {
+                delete Game.instance.allBullets[this.bulletid];
                 set(ref(FirebaseClient.instance.db, `/bullets`), Game.instance.allBullets);
                 return;
             }
@@ -249,6 +312,18 @@ class UnlockPointerCommand {
         document.exitPointerLock();
     }
 }
+class ToggleLaserCommand {
+    execute() {
+        if (Game.instance.player.laser.isOn) {
+            Game.instance.player.laser.isOn = false;
+        }
+        else {
+            if (Game.instance.player.ammoGauge.canUse) {
+                Game.instance.player.laser.isOn = true;
+            }
+        }
+    }
+}
 class SetMainGameControlsCommand {
     execute() {
         Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand());
@@ -266,10 +341,37 @@ class ClearAllPlayersFromDatabaseCommand {
         set(ref(FirebaseClient.instance.db, `/players`), {});
     }
 }
+class UploadBulletToFirebaseCommand {
+    bullet;
+    constructor(bullet) {
+        this.bullet = bullet;
+    }
+    execute() {
+        update(ref(FirebaseClient.instance.db, `/bullets/${this.bullet.id}`), {
+            x: this.bullet.x,
+            y: this.bullet.y,
+            z: this.bullet.z,
+            id: this.bullet.id,
+            sourcePlayerID: this.bullet.sourcePlayerID
+        });
+    }
+}
 class RemoveClientPlayerFromDatabaseCommand {
     execute() {
         set(ref(FirebaseClient.instance.db, `/players`), Game.instance.otherPlayers);
     }
 }
-export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand, ClearAllPlayersFromDatabaseCommand, RemoveClientPlayerFromDatabaseCommand, TogglePauseCommand, LockPointerCommand, ExitGameCommand, RenderViewForPlayerCommand, RemoveBulletFromFirebaseCommand, UpdateBulletPositionToFirebaseCommand };
+class RemoveAllBulletsBySelfFromDatabaseCommand {
+    execute() {
+        const BULLETS = Object.values(Game.instance.allBullets);
+        for (let i = 0; i < BULLETS.length; i++) {
+            if (BULLETS[i].sourcePlayerID === Game.instance.player.id) {
+                delete Game.instance.allBullets[BULLETS[i].id];
+                console.log("deleted at the end");
+            }
+        }
+        set(ref(FirebaseClient.instance.db, `/bullets`), Game.instance.allBullets);
+    }
+}
+export { HandleMouseClickCommand, HandleMouseMoveCommand, MainGameHandleMouseMoveCommand, DisplayMenuAndSetMouseControllerCommand, StartGameCommand, MenuMouseClickedEventHandlerCommand, MainGameMouseClickedEventHandlerCommand, UpdatePlayerPositionToFirebaseCommand, ClearAllPlayersFromDatabaseCommand, RemoveClientPlayerFromDatabaseCommand, TogglePauseCommand, LockPointerCommand, ExitGameCommand, RenderViewForPlayerCommand, RemoveBulletFromFirebaseByIDCommand, UpdateBulletPositionToFirebaseCommand, ExitGameThenDisplayMenuCommand, UnlockPointerCommand, RemoveAllBulletsBySelfFromDatabaseCommand, UpdateLaserToFirebaseCommand, RemoveOwnLaserFromFirebaseCommand, DisplayTextCommand };
 //# sourceMappingURL=Command.js.map

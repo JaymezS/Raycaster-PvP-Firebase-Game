@@ -55,6 +55,7 @@ class VectorMath {
     return [uv[0] * magnitude, uv[1] * magnitude, uv[2] * magnitude]
   }
 
+
   public static scalarMultiply(v: Vector, s: number): Vector {
     return [v[0] * s, v[1] * s, v[2] * s]
   }
@@ -77,7 +78,18 @@ class VectorMath {
   }
 
   public static getDistance(p1: Position, p2: Position): number {
-    return VectorMath.getMagnitude([p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]])
+    return VectorMath.getMagnitude([p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]])
+  }
+
+  public static isPointInCube(point: Position, cubeMin: Position, cubeMax: Position): boolean {
+    if (
+      point[0] >= cubeMin[0] && point[0] <= cubeMax[0] &&
+      point[1] >= cubeMin[1] && point[1] <= cubeMax[1] &&
+      point[2] >= cubeMin[2] && point[2] <= cubeMax[2]
+    ) {
+      return true
+    }
+    return false
   }
 
   public static dotProduct(v1: Vector, v2: Vector): number {
@@ -156,6 +168,24 @@ class VectorMath {
     } else {
       return intersectionsResults;
     }
+  }
+
+  public static rectanglesCollide(rect1Min: Position, rect1Max: Position, rect2Min: Position, rect2max: Position) {
+    if (rect1Max[0] <= rect2Min[0] || rect2max[0] <= rect1Min[0]){
+      return false;
+    }
+
+
+    if (rect1Max[1] <= rect2Min[1] || rect2max[1] <= rect1Min[1]){
+      return false;
+    }
+
+
+    if (rect1Max[2] <= rect2Min[2] || rect2max[2] <= rect1Min[2]){
+      return false;
+    }
+
+    return true
   }
 }
 

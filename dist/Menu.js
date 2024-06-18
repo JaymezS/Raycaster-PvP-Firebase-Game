@@ -53,6 +53,7 @@ class CompositeMenu {
     _buttons = [];
     command;
     renderBackgroundCommand;
+    displayElementCommands = [];
     constructor(title) {
         this.title = title;
     }
@@ -60,8 +61,13 @@ class CompositeMenu {
         this.command = c;
         return this;
     }
+    addDisplayElementCommand(c) {
+        this.displayElementCommands.push(c);
+        return this;
+    }
     assignRenderBackgroundCommand(c) {
         this.renderBackgroundCommand = c;
+        return this;
     }
     get buttons() {
         return this._buttons;
@@ -95,6 +101,9 @@ class CompositeMenu {
         Canvas.instance.context.font = "40px Arial";
         Canvas.instance.context.fillText(`${this.title}`, Canvas.WIDTH / 2 - TEXT_WIDTH / 2, Canvas.HEIGHT / 4);
         this.drawAllButtons();
+        for (let command of this.displayElementCommands) {
+            command.execute();
+        }
     }
 }
 export { CompositeMenu, MenuButton };

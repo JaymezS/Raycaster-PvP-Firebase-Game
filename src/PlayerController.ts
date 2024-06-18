@@ -178,6 +178,7 @@ class PlayerController {
     ) {
       if (this._mouseClickCommand !== undefined) {
         this._mouseClickCommand
+          .assignType(event.button)
           .assignCoordinates(this.mousePositionX, this.mousePositionY)
           .execute();
       }

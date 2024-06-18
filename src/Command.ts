@@ -4,9 +4,11 @@ import { Player } from "./Player.js";
 import {
   update,
   ref,
-  set
+  set, 
+  onValue, 
   //@ts-ignore Import module
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
 import { FirebaseClient } from "./FirebaseClient.js";
 import { Canvas } from "./Canvas.js";
 import { VectorMath, Vector, Position, Direction } from "./Vector.js";
@@ -14,6 +16,8 @@ import { GameMap } from "./Map.js";
 import { PIXEL_COLORS } from "./Map.js";
 import { Utilities } from "./Utilities.js";
 import { Bullet } from "./Bullet.js";
+import { Laser } from "./Laser.js";
+import test from "node:test";
 
 interface Command {
   execute(): void;
@@ -24,9 +28,18 @@ abstract class HandleMouseClickCommand implements Command {
   protected mousePositionX: number = 0
   protected mousePositionY: number = 0
 
+  protected rightClick: boolean = false;
+
+  public assignType(type: number): HandleMouseClickCommand {
+    if (type === 2) {
+      this.rightClick = true
+    }
+    return this
+  }
+
   // either do this or get the coordinates directly from controller in the execute
   // (if having an extra method in commands are not allowed)
-  public assignCoordinates(x: number, y: number): Command {
+  public assignCoordinates(x: number, y: number): HandleMouseClickCommand {
     this.mousePositionX = x;
     this.mousePositionY = y;
     return this
@@ -38,7 +51,12 @@ abstract class HandleMouseClickCommand implements Command {
 
 class MainGameMouseClickedEventHandlerCommand extends HandleMouseClickCommand{
   public execute(): void {
-    new ShootBulletCommand(Game.instance.player).execute()
+    if (this.rightClick) {
+      new ShootBulletCommand(Game.instance.player).execute()
+      this.rightClick = false
+    } else {
+      new ToggleLaserCommand().execute()
+    }
   }
 }
 
@@ -74,7 +92,18 @@ class ExitGameCommand implements Command {
   public execute(): void {
     Game.instance.endGame()
     new UnsetMainGameControlsCommand().execute();
-    new DisplayMenuAndSetMouseControllerCommand(Game.instance.mainMenu).execute()
+  }
+}
+
+
+class ExitGameThenDisplayMenuCommand extends ExitGameCommand implements Command {
+  constructor(protected menu: CompositeMenu) {
+    super()
+  }
+
+  public execute(): void {
+    super.execute()
+    new DisplayMenuAndSetMouseControllerCommand(this.menu).execute()
   }
 }
 
@@ -83,8 +112,22 @@ class ShootBulletCommand implements Command {
   constructor(protected player: Player) { }
 
   public execute(): void {
-    const NEW_BULLET: Bullet = new Bullet(this.player)
-    Game.instance.bulletsBySelf.push(NEW_BULLET)
+    if (this.player.canShoot) {
+      Game.instance.player.ammoGauge.useFuel(Bullet.fuelCost)
+      const NEW_BULLET: Bullet = new Bullet(this.player)
+      new UploadBulletToFirebaseCommand(NEW_BULLET).execute()
+      Game.instance.bulletsBySelf.push(NEW_BULLET)
+      this.player.resetShootingCooldown()
+    }
+  }
+}
+
+
+class DisplayTextCommand implements Command {
+  constructor(protected text: string, protected x: number, protected y: number, protected maxW: number) { }
+  
+  public execute(): void {
+    Utilities.writeLargeText(this.text, this.x, this.y, this.maxW)
   }
 }
 
@@ -135,7 +178,7 @@ class RenderViewForPlayerCommand implements Command {
         let vectorFromPlayerToPoint: Vector = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector)
         let rayAngles: Direction = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint)
 
-        const RAW_RAY_DISTANCE: number[] = Game.instance.player.castBlockVisionRayVersion2(rayAngles[0], rayAngles[1]);
+        const RAW_RAY_DISTANCE: number[] = Game.instance.player.castBlockVisionRayVersion3(rayAngles[0], rayAngles[1]);
         
         // custom shading
         // render the pixel
@@ -262,9 +305,8 @@ class UpdatePlayerPositionToFirebaseCommand implements Command {
 
 
 class UpdateBulletPositionToFirebaseCommand implements Command {
-  constructor(protected bullet: Bullet) {
-    
-  }
+  constructor(protected bullet: Bullet) { }
+
   public execute(): void {
     update(
       ref(FirebaseClient.instance.db, `/bullets/${this.bullet.id}`),
@@ -280,15 +322,42 @@ class UpdateBulletPositionToFirebaseCommand implements Command {
 }
 
 
-class RemoveBulletFromFirebaseCommand implements Command {
-  constructor(protected bullet: Bullet) {
+class UpdateLaserToFirebaseCommand implements Command {
+  constructor(protected laser: Laser) { }
+
+  public execute(): void {
+    update(
+      ref(FirebaseClient.instance.db, `/lasers/${this.laser.id}`),
+      {
+        position: this.laser.position,
+        direction: this.laser.directionVector,
+        isOn: this.laser.isOn,
+        id: this.laser.id,
+        sourcePlayerID: this.laser.sourcePlayerID
+      }
+    )
+  }
+}
+
+
+class RemoveOwnLaserFromFirebaseCommand implements Command {
+
+  public execute(): void {
+    set(ref(FirebaseClient.instance.db, `/lasers`), Game.instance.otherLasers)
+  }
+}
+
+
+class RemoveBulletFromFirebaseByIDCommand implements Command {
+  constructor(protected bulletid: string) {
 
   }
   public execute(): void {
-    const BULLETS: { x: number, y: number, z: number, id: string, sourcePlayerID: string }[] = Object.values(Game.instance.allBullets)
+    const BULLETS: { x: number, y: number, z: number, id: string, sourcePlayerID: string }[]
+      = Object.values(Game.instance.allBullets)
     for (let i = 0; i < BULLETS.length; i++) {
-      if (BULLETS[i].id === this.bullet.id) {
-        delete Game.instance.allBullets[this.bullet.id];
+      if (BULLETS[i].id === this.bulletid) {
+        delete Game.instance.allBullets[this.bulletid];
         set(ref(FirebaseClient.instance.db, `/bullets`), Game.instance.allBullets)
         return
       }
@@ -328,6 +397,19 @@ class UnlockPointerCommand implements Command {
 }
 
 
+class ToggleLaserCommand implements Command {
+  public execute(): void {
+    if (Game.instance.player.laser.isOn) {
+      Game.instance.player.laser.isOn = false
+    } else {
+      if (Game.instance.player.ammoGauge.canUse) {
+        Game.instance.player.laser.isOn = true
+      }
+    }
+  }
+}
+
+
 class SetMainGameControlsCommand implements Command {
   public execute(): void {
     Game.instance.controller.assignMouseMoveCommand(new MainGameHandleMouseMoveCommand())
@@ -351,12 +433,43 @@ class ClearAllPlayersFromDatabaseCommand implements Command {
 }
 
 
+class UploadBulletToFirebaseCommand implements Command {
+  constructor(protected bullet: Bullet) { }
+
+  public execute(): void {
+    update(
+      ref(FirebaseClient.instance.db, `/bullets/${this.bullet.id}`),
+      {
+        x: this.bullet.x, 
+        y: this.bullet.y,
+        z: this.bullet.z,
+        id: this.bullet.id,
+        sourcePlayerID: this.bullet.sourcePlayerID
+      }
+    )
+  }
+}
+
+
 class RemoveClientPlayerFromDatabaseCommand implements Command {
   public execute(): void {
     set(ref(FirebaseClient.instance.db, `/players`), Game.instance.otherPlayers)
   }
 }
 
+
+class RemoveAllBulletsBySelfFromDatabaseCommand implements Command {
+  public execute(): void {
+    const BULLETS: { x: number, y: number, z: number, id: string, sourcePlayerID: string }[] = Object.values(Game.instance.allBullets)
+    for (let i = 0; i < BULLETS.length; i++) {
+      if (BULLETS[i].sourcePlayerID === Game.instance.player.id) {
+        delete Game.instance.allBullets[BULLETS[i].id];
+        console.log("deleted at the end")
+      }
+    }
+    set(ref(FirebaseClient.instance.db, `/bullets`), Game.instance.allBullets)
+  }
+}
 
 export {
   Command,
@@ -374,6 +487,12 @@ export {
   LockPointerCommand, 
   ExitGameCommand, 
   RenderViewForPlayerCommand, 
-  RemoveBulletFromFirebaseCommand, 
-  UpdateBulletPositionToFirebaseCommand
+  RemoveBulletFromFirebaseByIDCommand, 
+  UpdateBulletPositionToFirebaseCommand, 
+  ExitGameThenDisplayMenuCommand, 
+  UnlockPointerCommand,
+  RemoveAllBulletsBySelfFromDatabaseCommand, 
+  UpdateLaserToFirebaseCommand,
+  RemoveOwnLaserFromFirebaseCommand,
+  DisplayTextCommand
 }

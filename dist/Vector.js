@@ -63,6 +63,14 @@ class VectorMath {
     static getDistance(p1, p2) {
         return VectorMath.getMagnitude([p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]]);
     }
+    static isPointInCube(point, cubeMin, cubeMax) {
+        if (point[0] >= cubeMin[0] && point[0] <= cubeMax[0] &&
+            point[1] >= cubeMin[1] && point[1] <= cubeMax[1] &&
+            point[2] >= cubeMin[2] && point[2] <= cubeMax[2]) {
+            return true;
+        }
+        return false;
+    }
     static dotProduct(v1, v2) {
         return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
     }
@@ -119,6 +127,18 @@ class VectorMath {
         else {
             return intersectionsResults;
         }
+    }
+    static rectanglesCollide(rect1Min, rect1Max, rect2Min, rect2max) {
+        if (rect1Max[0] <= rect2Min[0] || rect2max[0] <= rect1Min[0]) {
+            return false;
+        }
+        if (rect1Max[1] <= rect2Min[1] || rect2max[1] <= rect1Min[1]) {
+            return false;
+        }
+        if (rect1Max[2] <= rect2Min[2] || rect2max[2] <= rect1Min[2]) {
+            return false;
+        }
+        return true;
     }
 }
 export { VectorMath };

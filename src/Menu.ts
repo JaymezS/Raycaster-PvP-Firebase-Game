@@ -79,6 +79,7 @@ class CompositeMenu implements MenuProperties {
   protected _buttons: MenuButton[] = [];
   protected command: Command | undefined;
   protected renderBackgroundCommand: Command | undefined
+  protected displayElementCommands: Command[] = [];
 
   constructor(protected title: string) { }
 
@@ -87,8 +88,14 @@ class CompositeMenu implements MenuProperties {
     return this;
   }
 
-  public assignRenderBackgroundCommand(c: Command) {
+  public addDisplayElementCommand(c: Command): CompositeMenu {
+    this.displayElementCommands.push(c)
+    return this
+  }
+
+  public assignRenderBackgroundCommand(c: Command): CompositeMenu {
     this.renderBackgroundCommand = c
+    return this
   }
 
   public get buttons(): MenuButton[] {
@@ -129,6 +136,9 @@ class CompositeMenu implements MenuProperties {
       Canvas.HEIGHT / 4
     );
     this.drawAllButtons();
+    for (let command of this.displayElementCommands) {
+      command.execute()
+    }
   }
 }
 

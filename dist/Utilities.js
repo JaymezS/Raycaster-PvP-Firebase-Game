@@ -18,16 +18,51 @@ class Utilities {
     static randInt(low, high) {
         return Math.floor(Math.random() * (high - low)) + low;
     }
-    static calculateAngleFromLeftOfCone(totalAngle, totalLength, distanceFromLeft) {
-        const OPPOSITE = totalLength / 2;
-        const HEIGHT = (OPPOSITE) / (Math.tan(totalAngle / 2));
-        const ANGLE_FROM_CENTER = Math.atan(Math.abs(OPPOSITE - distanceFromLeft) / HEIGHT);
-        if (distanceFromLeft <= OPPOSITE) {
-            return (totalAngle / 2) - ANGLE_FROM_CENTER;
+    // public static calculateAngleFromLeftOfCone(
+    //   totalAngle: number, totalLength: number, distanceFromLeft: number
+    // ): number {
+    //   const OPPOSITE: number = totalLength / 2
+    //   const HEIGHT: number = (OPPOSITE) / (Math.tan(totalAngle / 2))
+    //   const ANGLE_FROM_CENTER: number = Math.atan(Math.abs(OPPOSITE - distanceFromLeft) / HEIGHT)
+    //   if (distanceFromLeft <= OPPOSITE) {
+    //     return (totalAngle / 2) - ANGLE_FROM_CENTER;
+    //   } else {
+    //     return (totalAngle / 2) + ANGLE_FROM_CENTER
+    //   }
+    // }
+    static fillShapeOnVertices(vertices, color) {
+        if (vertices.length >= 2) {
+            let shape = new Path2D();
+            shape.moveTo(vertices[0][0], vertices[0][1]);
+            for (let i = 1; i < vertices.length; i++) {
+                shape.lineTo(vertices[i][0], vertices[i][1]);
+            }
+            shape.closePath();
+            Canvas.instance.context.fillStyle = color;
+            Canvas.instance.context.fill(shape);
         }
-        else {
-            return (totalAngle / 2) + ANGLE_FROM_CENTER;
+    }
+    // modified code from StackOverflow to autowrap texts in canvas
+    static writeLargeText(text, x, y, maxWidth, fontSize = 16, fontFace = "Arial") {
+        var words = text.split(' ');
+        var line = '';
+        var lineHeight = fontSize;
+        Canvas.instance.context.fillStyle = "black";
+        Canvas.instance.context.font = fontSize + "px " + fontFace;
+        for (var n = 0; n < words.length; n++) {
+            var testLine = line + words[n] + ' ';
+            var metrics = Canvas.instance.context.measureText(testLine);
+            var testWidth = metrics.width;
+            if (testWidth > maxWidth) {
+                Canvas.instance.context.fillText(line, x, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+            }
+            else {
+                line = testLine;
+            }
         }
+        Canvas.instance.context.fillText(line, x, y);
     }
 }
 export { Utilities };
