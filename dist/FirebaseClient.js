@@ -7,7 +7,6 @@ class FirebaseClient {
     static _instance;
     app = initializeApp(firebaseConfig);
     _db = getDatabase(this.app);
-    constructor() { }
     static get instance() {
         if (FirebaseClient._instance === undefined) {
             FirebaseClient._instance = new FirebaseClient();

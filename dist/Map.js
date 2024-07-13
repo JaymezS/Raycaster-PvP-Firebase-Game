@@ -9,16 +9,11 @@ var Colors;
 })(Colors || (Colors = {}));
 class GameMap {
     static tileSize = 64;
-    baseTileColor = [255, 255, 255];
-    floorColor = [64, 64, 64];
-    ceilingColor = [0, 0, 125];
-    // horizontal & vertical
-    // texture must have tileSize/wallBitSize rows and columns
     static _wallBitSize = 4;
+    static wallTexture = [];
     static get wallBitSize() {
         return GameMap._wallBitSize;
     }
-    static wallTexture = [];
     constructor() {
         GameMap.wallTexture = [
             [

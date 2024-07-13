@@ -1,5 +1,4 @@
 import { Canvas } from "./Canvas.js";
-import { MouseLockClient } from "./MouseLockClient.js";
 class PlayerController {
     player;
     _wKeyPressed = false;
@@ -8,7 +7,12 @@ class PlayerController {
     _dKeyPressed = false;
     _escKeyPressed = false;
     _spaceKeyPressed = false;
-    mouseLockClient = new MouseLockClient();
+    mousePositionX = 0;
+    mousePositionY = 0;
+    _mouseClickCommand;
+    _mouseMoveCommand;
+    _escKeyPressedCommand;
+    _pointerLockChangeCommand;
     // default is 1
     _sensitivity = 0.5;
     get sensitivity() {
@@ -32,12 +36,6 @@ class PlayerController {
     get escKeyPressed() {
         return this._escKeyPressed;
     }
-    mousePositionX = 0;
-    mousePositionY = 0;
-    _mouseClickCommand;
-    _mouseMoveCommand;
-    _escKeyPressedCommand;
-    _pointerLockChangeCommand;
     get mouseClickCommand() {
         return this._mouseClickCommand;
     }

@@ -1,10 +1,6 @@
 import { HandleMouseClickCommand, HandleMouseMoveCommand, Command } from "./Command.js";
 import { Canvas } from "./Canvas.js";
 import { Player } from "./Player.js";
-import { MouseLockClient } from "./MouseLockClient.js";
-import { Game } from "./Game.js";
-
-
 
 
 class PlayerController {
@@ -15,62 +11,62 @@ class PlayerController {
   private _escKeyPressed: boolean = false
   private _spaceKeyPressed: boolean = false;
 
-  readonly mouseLockClient: MouseLockClient = new MouseLockClient()
-
-  // default is 1
-  private _sensitivity: number = 0.5;
-
-  public get sensitivity(): number {
-    return this._sensitivity
-  }
-
-  public get wKeyPressed(): boolean {
-    return this._wKeyPressed
-  }
-
-  
-  public get aKeyPressed(): boolean {
-    return this._aKeyPressed
-  }
-
-  
-  public get dKeyPressed(): boolean {
-    return this._dKeyPressed
-  }
-
-  
-  public get sKeyPressed(): boolean {
-    return this._sKeyPressed
-  }
-
-  public get spaceKeyPressed(): boolean {
-    return this._spaceKeyPressed
-  }
-
-  public get escKeyPressed(): boolean {
-    return this._escKeyPressed;
-  }
-
-  protected mousePositionX: number = 0;
-  protected mousePositionY: number = 0;
+  private mousePositionX: number = 0;
+  private mousePositionY: number = 0;
   private _mouseClickCommand: HandleMouseClickCommand | undefined;
   private _mouseMoveCommand: HandleMouseMoveCommand | undefined;
 
   private _escKeyPressedCommand: Command | undefined;
   private _pointerLockChangeCommand: Command | undefined;
 
+  // default is 1
+  private _sensitivity: number = 0.5;
+
+  public get sensitivity(): number {
+    return this._sensitivity;
+  }
+
+  public get wKeyPressed(): boolean {
+    return this._wKeyPressed;
+  }
+
+  
+  public get aKeyPressed(): boolean {
+    return this._aKeyPressed;
+  }
+
+  
+  public get dKeyPressed(): boolean {
+    return this._dKeyPressed;
+  }
+
+  
+  public get sKeyPressed(): boolean {
+    return this._sKeyPressed;
+  }
+
+  public get spaceKeyPressed(): boolean {
+    return this._spaceKeyPressed;
+  }
+
+  public get escKeyPressed(): boolean {
+    return this._escKeyPressed;
+  }
+
+
+
   public get mouseClickCommand(): HandleMouseClickCommand | undefined {
-    return this._mouseClickCommand
+    return this._mouseClickCommand;
   }
 
   public get mouseMoveCommand(): HandleMouseMoveCommand | undefined {
-    return this._mouseMoveCommand
+    return this._mouseMoveCommand;
   }
 
 
   constructor(readonly player: Player) {
     document.addEventListener("mousedown", (event) => this.handleMouseClickEvent(event));
-    document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e))
+    document.addEventListener("mousemove", (e) => this.handleMouseMoveEvent(e));
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'd') {
@@ -89,7 +85,7 @@ class PlayerController {
         this._spaceKeyPressed = true;
       }
       if (e.key === "Escape") {
-        this._escKeyPressed = true
+        this._escKeyPressed = true;
       }
     });
 
@@ -107,11 +103,11 @@ class PlayerController {
         this._sKeyPressed = false;
       } 
       if (e.key === " ") {
-        this._spaceKeyPressed = false
+        this._spaceKeyPressed = false;
       }
       if (e.key === "Escape") {
         if (this._escKeyPressed === true && this._escKeyPressedCommand !== undefined) {
-          this._escKeyPressedCommand.execute()
+          this._escKeyPressedCommand.execute();
         }
         this._escKeyPressed = false;
       }
@@ -119,13 +115,13 @@ class PlayerController {
 
     document.addEventListener("pointerlockchange", (e) => {
       if (this._pointerLockChangeCommand !== undefined) {
-        this._pointerLockChangeCommand.execute()
+        this._pointerLockChangeCommand.execute();
       }
     })
   }
 
 
-  public clearInput() {
+  public clearInput(): void {
     this._aKeyPressed = false;
     this._wKeyPressed = false;
     this._sKeyPressed = false;
@@ -140,25 +136,25 @@ class PlayerController {
   }
 
   public assignEscKeyPressedCommand(c: Command | undefined): void {
-    this._escKeyPressedCommand = c
+    this._escKeyPressedCommand = c;
   } 
 
-  public assignMouseMoveCommand(c: HandleMouseMoveCommand | undefined) {
-    this._mouseMoveCommand = c
+  public assignMouseMoveCommand(c: HandleMouseMoveCommand | undefined): void {
+    this._mouseMoveCommand = c;
   }
 
-  public assignPointerLockChangeCommand(c: Command | undefined) {
-    this._pointerLockChangeCommand = c
+  public assignPointerLockChangeCommand(c: Command | undefined): void {
+    this._pointerLockChangeCommand = c;
   }
 
-  private handleMouseMoveEvent(event: MouseEvent) {
+  private handleMouseMoveEvent(event: MouseEvent): void {
     if (this._mouseMoveCommand !== undefined) {
-      this._mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute()
+      this._mouseMoveCommand.assignMovement(event.movementX, event.movementY).execute();
     }
   }
 
 
-  private handleMouseClickEvent(event: MouseEvent) {
+  private handleMouseClickEvent(event: MouseEvent): void {
     const MOUSE_X: number = event.clientX;
     const MOUSE_Y: number = event.clientY;
 

@@ -9,33 +9,30 @@ import { Bullet } from "./Bullet.js";
 import { Laser } from "./Laser.js";
 import { AmmoGauge } from "./Ammunition.js";
 class Player {
+    acceleration = 2;
+    maxMovingSpeed = 8;
+    maxHealth = 10;
+    id = nanoid(20);
+    ammoGauge = new AmmoGauge();
+    rotationSpeed = Math.PI / 180;
+    laser = new Laser(this);
     static size = 56;
-    // note that x and y are center values
+    // note that x and y are center values, but z in the z value of the top of the player
     _x = GameMap.tileSize * 1.5;
     _y = GameMap.tileSize * 1.5;
     _z = GameMap.tileSize * 1.9;
     size = Player.size;
     _yaw = 0;
     _pitch = 0;
-    _rotationSpeed = Math.PI / 180;
     _fov = Math.PI / 2; // Field of view
     colorCode = Utilities.randInt(0, PIXEL_COLORS.length);
-    acceleration = 2;
-    maxMovingSpeed = 8;
-    maxHealth = 10;
     _health = this.maxHealth;
-    id = nanoid(20);
-    ammoGauge = new AmmoGauge();
     grounded = false;
     shootingCooldown = 500;
     currentShootingCooldown = 0;
     maxPitch = Math.PI / 2;
     velocityVector = [0, 0, 0];
     _directionVector = [1, 0, 0];
-    _laser = new Laser(this);
-    get laser() {
-        return this._laser;
-    }
     get x() {
         return this._x;
     }
@@ -53,9 +50,6 @@ class Player {
     }
     get fov() {
         return this._fov;
-    }
-    get rotationSpeed() {
-        return this._rotationSpeed;
     }
     set yaw(angle) {
         this._yaw = angle;
@@ -215,14 +209,14 @@ class Player {
         }
     }
     update() {
-        this._laser.adjustToPlayer(this);
-        if (this._laser.isOn) {
+        this.laser.adjustToPlayer(this);
+        if (this.laser.isOn) {
             this.laser.useFuel();
         }
         else {
             this.ammoGauge.regenerateFuel();
         }
-        new UpdateLaserToFirebaseCommand(this._laser).execute();
+        new UpdateLaserToFirebaseCommand(this.laser).execute();
         this.currentShootingCooldown = Math.max(this.currentShootingCooldown - 1000 / Game.instance.FPS, 0);
         this._directionVector = VectorMath.convertYawAndPitchToUnitVector([this._yaw, this._pitch]);
         this.modifyVelocityVectorBasedOnIntendedVector();
@@ -360,7 +354,7 @@ class Player {
                         const DISTANCE = VectorMath.getDistance(currentRayPosition, PLAYER_POSITION);
                         const HIT_X = Math.abs(currentRayPosition[0] % GameMap.tileSize);
                         const HIT_Y = Math.abs(currentRayPosition[1] % GameMap.tileSize);
-                        // NOTE: (*0.99) and (+- 0.1) in the above is a bandaid solution to prevent overflowing texture bound
+                        // NOTE: (*0.99) and (+- 0.1) in the above is to prevent overflowing texture bound
                         // Since POI Calculations are precise, sometimes it gets HIT_X = 64 (boundary)
                         // So the wall Texture array access will exceed length
                         const PIXEL_COLOR = GameMap.wallTexture[1][Math.floor(HIT_X / GameMap.wallBitSize)][Math.floor(HIT_Y / GameMap.wallBitSize)];
@@ -445,6 +439,7 @@ class Player {
             }
         }
         let results;
+        // the ray is the shortest ray that collides with either of the 3 axial planes
         if (YCollisionResults[0] <= XCollisionResults[0] &&
             YCollisionResults[0] <= ZCollisionResults[0]) {
             results = YCollisionResults;

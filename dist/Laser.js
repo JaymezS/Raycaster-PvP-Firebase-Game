@@ -6,15 +6,9 @@ class Laser {
     _position;
     _directionVector;
     _sourcePlayerID;
-    _isOn = false;
+    isOn = false;
     fuelCost = 1;
     id = nanoid(20);
-    get isOn() {
-        return this._isOn;
-    }
-    set isOn(n) {
-        this._isOn = n;
-    }
     get sourcePlayerID() {
         return this._sourcePlayerID;
     }
@@ -37,8 +31,11 @@ class Laser {
         if (Game.instance.player.ammoGauge.canUseFuel(this.fuelCost)) {
             Game.instance.player.ammoGauge.useFuel(this.fuelCost);
             if (!Game.instance.player.ammoGauge.hasFuel) {
-                this._isOn = false;
+                this.isOn = false;
             }
+        }
+        else {
+            this.isOn = false;
         }
     }
 }

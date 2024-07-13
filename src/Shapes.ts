@@ -18,14 +18,14 @@ class Rectangle {
   }
 
   public get x(): number {
-    return this._x
+    return this._x;
   }
 
   public get y(): number {
-    return this._y
+    return this._y;
   }
   
-  public draw() {
+  public draw(): void {
     Canvas.instance.context.fillStyle = this.color;
     Canvas.instance.context.fillRect(this.x, this.y, this.width, this.height);
   }

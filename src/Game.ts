@@ -1,6 +1,6 @@
 import { PlayerController } from "./PlayerController.js";
 import { Canvas } from "./Canvas.js";
-import { DisplayMenuAndSetMouseControllerCommand, DisplayTextCommand, ExitGameCommand, ExitGameThenDisplayMenuCommand, LockPointerCommand, RemoveAllBulletsBySelfFromDatabaseCommand, RemoveBulletFromFirebaseByIDCommand, RemoveClientPlayerFromDatabaseCommand, RemoveOwnLaserFromFirebaseCommand, RenderViewForPlayerCommand, StartGameCommand, TogglePauseCommand, UnlockPointerCommand, UpdateBulletPositionToFirebaseCommand } from "./Command.js";
+import { DisplayMenuAndSetMouseControllerCommand, DisplayTextCommand, ExitGameThenDisplayMenuCommand, LockPointerCommand, RemoveAllBulletsBySelfFromDatabaseCommand, RemoveBulletFromFirebaseByIDCommand, RemoveClientPlayerFromDatabaseCommand, RemoveOwnLaserFromFirebaseCommand, RenderViewForPlayerCommand, StartGameCommand, TogglePauseCommand, UnlockPointerCommand, UpdateBulletPositionToFirebaseCommand } from "./Command.js";
 import { Utilities } from "./Utilities.js";
 import { Player } from "./Player.js";
 import { GameMap } from "./Map.js";
@@ -14,48 +14,44 @@ import {
 import { FirebaseClient } from "./FirebaseClient.js";
 import { Vector, VectorMath, Direction, Position } from "./Vector.js";
 import { Bullet } from "./Bullet.js";
-import { Rectangle } from "./Shapes.js";
 import { Laser } from "./Laser.js";
 
 class Game {
   private static _instance: Game | undefined;
-  readonly player: Player = new Player()
-  readonly gameMap: GameMap = new GameMap()
-  readonly controller: PlayerController = new PlayerController(this.player)
-  private context = Canvas.instance.context;
+  readonly player: Player = new Player();
+  readonly gameMap: GameMap = new GameMap();
+  readonly controller: PlayerController = new PlayerController(this.player);
+  private context: CanvasRenderingContext2D = Canvas.instance.context;
   private gameLoop: any = undefined;
   readonly FPS: number = 30;
-  private timeInterval: number = 1000/this.FPS
+  private timeInterval: number = 1000 / this.FPS;
+  /** pixel size */
   readonly resolution: number = 10;
-  readonly gravitationalAccelerationConstant: number = 1
-  readonly terminalVelocity: number = 12
-  readonly maxRenderDistance: number = 8 * GameMap.tileSize;
-  readonly pauseMenuBrightnessMultiplier: number = 0.1
+  readonly gravitationalAccelerationConstant: number = 1;
+  readonly terminalVelocity: number = 12;
+  readonly pauseMenuBrightnessMultiplier: number = 0.1;
   readonly defaultBrightnessMultiplier: number = 0.9;
   public brightnessMultiplier: number = this.defaultBrightnessMultiplier;
 
-  public spawnLocation: Position = [GameMap.tileSize * 1.5, GameMap.tileSize * 1.5, GameMap.tileSize * 1.9]
-  public spawnDirection: Direction = [0, 0]
+  public spawnLocation: Position = [GameMap.tileSize * 1.5, GameMap.tileSize * 1.5, GameMap.tileSize * 1.9];
+  public spawnDirection: Direction = [0, 0];
 
   public isPaused: boolean = true;
   
-  private _mainMenu: CompositeMenu = new CompositeMenu("JamesCraft Shooter")
-  private pauseMenu: CompositeMenu = new CompositeMenu("Game Paused")
-  private _gameOverMenu: CompositeMenu = new CompositeMenu("Game Over")
+  private _mainMenu: CompositeMenu = new CompositeMenu("JamesCraft Shooter");
+  private pauseMenu: CompositeMenu = new CompositeMenu("Game Paused");
+  private _gameOverMenu: CompositeMenu = new CompositeMenu("Game Over");
 
   public bulletsBySelf: Bullet[] = [];
   public bulletsToRemove: Bullet[] = [];
 
-  public otherPlayers = {}
-  public allBullets = {}
-  public otherLasers = {}
-
-
-  public healthBar: Rectangle = new Rectangle(Canvas.WIDTH/2 - 300, Canvas.HEIGHT-80, "Black", 600, 60)
+  public otherPlayers = {};
+  public allBullets = {};
+  public otherLasers = {};
 
 
   public get mainMenu(): CompositeMenu {
-    return this._mainMenu
+    return this._mainMenu;
   }
 
   public get gameOverMenu(): CompositeMenu {
@@ -64,21 +60,24 @@ class Game {
 
 
   private constructor() {
-    this.composeMainMenu()
-    this.composePauseMenu()
-    this.composeGameOverMenu()
+    this.composeMainMenu();
+    this.composePauseMenu();
+    this.composeGameOverMenu();
 
     window.addEventListener("beforeunload", function (e) {
-      Game.instance.endGame()
-      new RemoveClientPlayerFromDatabaseCommand().execute()
+      Game.instance.endGame();
+      new RemoveClientPlayerFromDatabaseCommand().execute();
     });
   }
 
-  public start() {
-    new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute()
+  /**
+   * functions that runs when the program starts (cannot put in constructor to avoid conflict)
+   */
+  public start(): void {
+    new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();
   }
 
-  public updateFromDatabase(): void {
+  private updateFromDatabase(): void {
     onValue(
       ref(FirebaseClient.instance.db, "/players"),
       (snapshot) => {
@@ -108,181 +107,172 @@ class Game {
     );
 
     onValue(
-      ref(FirebaseClient.instance.db, "/bullets"), 
+      ref(FirebaseClient.instance.db, "/bullets"),
       (snapshot) => {
         if (snapshot.val()) {
-          this.allBullets = snapshot.val()
+          this.allBullets = snapshot.val();
         }
       },
-      { onlyOnce: true}
-    )
+      { onlyOnce: true }
+    );
   }
 
 
-
-  public updateOwnBulletsAndUpdateToFirebase(): void {
+  private updateOwnBulletsAndUpdateToFirebase(): void {
     for (let i = 0; i < this.bulletsBySelf.length; i++) {
-      const bullet: Bullet = this.bulletsBySelf[i]
+      const bullet: Bullet = this.bulletsBySelf[i];
       bullet.updatePosition();
-      new UpdateBulletPositionToFirebaseCommand(bullet).execute()
+      new UpdateBulletPositionToFirebaseCommand(bullet).execute();
 
       if (bullet.collideWithWall()) {
         this.bulletsBySelf.splice(i, 1);
-        this.bulletsToRemove.push(bullet)
+        this.bulletsToRemove.push(bullet);
       }
     }
     for (let i = 0; i < this.bulletsToRemove.length; i++) {
-      const B: Bullet = this.bulletsToRemove[i]
+      const B: Bullet = this.bulletsToRemove[i];
       if (this.allBullets[B.id]) {
-        new RemoveBulletFromFirebaseByIDCommand(B.id).execute()
-        this.bulletsToRemove.splice(i, 1)
+        new RemoveBulletFromFirebaseByIDCommand(B.id).execute();
+        this.bulletsToRemove.splice(i, 1);
       }
     }
-
-    // delete ghost bullets (that do not exist in db)
-    
   }
 
 
-  
-
-
-  public startGame() {
-    this.player.setLocation(this.spawnLocation)
-    this.player.setDirection(this.spawnDirection)
-    this.player.resetHealth()
-    this.player.laser.isOn = false
-    this.controller.assignPointerLockChangeCommand(new TogglePauseCommand())
+  public startGame(): void {
+    this.player.setLocation(this.spawnLocation);
+    this.player.setDirection(this.spawnDirection);
+    this.player.resetHealth();
+    this.player.laser.isOn = false;
+    this.controller.assignPointerLockChangeCommand(new TogglePauseCommand());
 
     this.gameLoop = setInterval(() => {
-      const TIME: number = performance.now()
-      this.updateFromDatabase()
-      this.player.update()
-      this.updateOwnBulletsAndUpdateToFirebase()
-      this.checkPlayerCollisionWithBullets()
-      this.checkPlayerCollisionWithLasers()
-      this.renderForPlayer()
-      this.renderPlayerUI()
-
+      const TIME: number = performance.now();
+      this.updateFromDatabase();
+      this.player.update();
+      this.updateOwnBulletsAndUpdateToFirebase();
+      this.checkPlayerCollisionWithBullets();
+      this.checkPlayerCollisionWithLasers();
+      this.renderForPlayer();
+      this.renderPlayerUI();
+      
       if (this.player.health <= 0) {
-        this.controller.assignPointerLockChangeCommand(undefined)
-        new UnlockPointerCommand().execute()
-        new ExitGameThenDisplayMenuCommand(this.gameOverMenu).execute()
-        return
+        this.controller.assignPointerLockChangeCommand(undefined);
+        new UnlockPointerCommand().execute();
+        new ExitGameThenDisplayMenuCommand(this.gameOverMenu).execute();
+        return;
       }
 
       if (this.isPaused) {
-        new DisplayMenuAndSetMouseControllerCommand(this.pauseMenu).execute()
+        new DisplayMenuAndSetMouseControllerCommand(this.pauseMenu).execute();
       }
 
-
-
-
       // displays FPS
-      this.context.font = "24px Arial"
-      this.context.fillStyle = "white"
-      this.context.fillText(`MAX FPS: ${Math.round(1000 / (performance.now()-TIME))}`, 50, 50)
+      this.context.font = "24px Arial";
+      this.context.fillStyle = "white";
+      this.context.fillText(`MAX FPS: ${Math.round(1000 / (performance.now() - TIME))}`, 50, 50);
     }, this.timeInterval);
   }
 
-  public composeMainMenu(): void {
+
+  private composeMainMenu(): void {
     const START_BUTTON: MenuButton = new MenuButton(
       Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
       Canvas.HEIGHT / 2 - MenuButton.buttonHeight / 2,
       "Start Game"
-    )
-    START_BUTTON.addCommand(new StartGameCommand())
+    );
+    START_BUTTON.addCommand(new StartGameCommand());
 
 
-    const INSTRUCTION_PARAGRAPH: string = `Welcome to my 3D PvP shooter Game, the goal of the game is to eliminate other players, click "Start Game" to begin, left click in game to toggle a hit-scan laser that does minimum damage, right click to shoot a slow projectile that does heavy damage.`
-    const UI_EXPLAINATION_PARAGRAPH: string = "The red bar at the bottom is the health bar, when it reaches 0, it is Game Over. The bar on the right is your ammunition bar, lasers will consistently drain ammo when on, and bullets will cost a chunk of ammo when shooting. New lasers and bullets cannot be used when the ammo is below a certain threshold. Ammo will regenerate slower if used below that threshold (tip: try to keep ammo above the threshold, shoot in bursts)"
+    const INSTRUCTION_PARAGRAPH: string = `Welcome to my 3D PvP shooter Game, the goal of the game is to eliminate other players, click "Start Game" to begin, left click in game to toggle a hit-scan laser that does minimum damage, right click to shoot a slow projectile that does heavy damage.`;
+    const UI_EXPLAINATION_PARAGRAPH: string = "The red bar at the bottom is the health bar, when it reaches 0, it is Game Over. The bar on the right is your ammunition bar, lasers will consistently drain ammo when on, and bullets will cost a chunk of ammo when shooting. New lasers and bullets cannot be used when the ammo is below a certain threshold. Ammo will regenerate slower if used below that threshold (tip: try to keep ammo above the threshold, shoot in bursts)";
 
 
-    const INSTRUCTION_COMMAND = new DisplayTextCommand(INSTRUCTION_PARAGRAPH, Canvas.WIDTH/4, Canvas.HEIGHT/2, 300)
-    const UI_COMMAND = new DisplayTextCommand(UI_EXPLAINATION_PARAGRAPH, Canvas.WIDTH/4 * 3 - 300, Canvas.HEIGHT/2,  300)
+    const INSTRUCTION_COMMAND = new DisplayTextCommand(INSTRUCTION_PARAGRAPH, Canvas.WIDTH / 4, Canvas.HEIGHT / 2, 300);
+    const UI_COMMAND = new DisplayTextCommand(UI_EXPLAINATION_PARAGRAPH, Canvas.WIDTH / 4 * 3 - 300, Canvas.HEIGHT / 2, 300);
     this._mainMenu.
       addMenuButton(START_BUTTON).
       addDisplayElementCommand(INSTRUCTION_COMMAND).
-      addDisplayElementCommand(UI_COMMAND)
+      addDisplayElementCommand(UI_COMMAND);
   }
 
 
-  public composePauseMenu(): void {
-    
+  private composePauseMenu(): void { 
     const RESUME_BUTTON: MenuButton = new MenuButton(
       Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
       Canvas.HEIGHT / 2 - MenuButton.buttonHeight * 2,
       "Resume Game"
-    )
-    RESUME_BUTTON.addCommand(new LockPointerCommand())
+    );
+    RESUME_BUTTON.addCommand(new LockPointerCommand());
 
     const EXIT_BUTTON: MenuButton = new MenuButton(
       Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
       Canvas.HEIGHT / 2 + MenuButton.buttonHeight,
       "Exit Game"
-    )
-    EXIT_BUTTON.addCommand(new ExitGameThenDisplayMenuCommand(this.mainMenu))
+    );
+    EXIT_BUTTON.addCommand(new ExitGameThenDisplayMenuCommand(this.mainMenu));
     this.pauseMenu.addMenuButton(RESUME_BUTTON);
     this.pauseMenu.addMenuButton(EXIT_BUTTON);
-    this.pauseMenu.assignRenderBackgroundCommand(new RenderViewForPlayerCommand())
+    this.pauseMenu.assignRenderBackgroundCommand(new RenderViewForPlayerCommand());
   }
+
 
   private composeGameOverMenu(): void {
     const MENU_BUTTON: MenuButton = new MenuButton(
       Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2,
       Canvas.HEIGHT / 2 - MenuButton.buttonHeight / 2,
       "Return To Menu"
-    )
+    );
 
-    MENU_BUTTON.addCommand(new DisplayMenuAndSetMouseControllerCommand(this.mainMenu))
-    this.gameOverMenu.addMenuButton(MENU_BUTTON)
-    this.gameOverMenu.assignRenderBackgroundCommand(new RenderViewForPlayerCommand())
+    MENU_BUTTON.addCommand(new DisplayMenuAndSetMouseControllerCommand(this.mainMenu));
+    this.gameOverMenu.addMenuButton(MENU_BUTTON);
+    this.gameOverMenu.assignRenderBackgroundCommand(new RenderViewForPlayerCommand());
   }
 
-  public endGame() {
-    this.isPaused = true
-    this.controller.assignEscKeyPressedCommand(undefined)
-    this.brightnessMultiplier = Game.instance.pauseMenuBrightnessMultiplier
+  public endGame(): void {
+    this.isPaused = true;
+    this.controller.assignEscKeyPressedCommand(undefined);
+    this.brightnessMultiplier = Game.instance.pauseMenuBrightnessMultiplier;
     this.player.laser.isOn = false;
     this.controller.clearInput();
     clearInterval(this.gameLoop);
-    new RemoveClientPlayerFromDatabaseCommand().execute()
-    new RemoveAllBulletsBySelfFromDatabaseCommand().execute()
-    new RemoveOwnLaserFromFirebaseCommand().execute()
-    this.player.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections()
+    new RemoveClientPlayerFromDatabaseCommand().execute();
+    new RemoveAllBulletsBySelfFromDatabaseCommand().execute();
+    new RemoveOwnLaserFromFirebaseCommand().execute();
   }
 
 
   private checkPlayerCollisionWithBullets(): void {
-    const BULLET_POSITIONS: { x: number, y: number, z: number, id: string, sourcePlayerID: string }[] = Object.values(this.allBullets)
+    const BULLET_POSITIONS: { x: number, y: number, z: number, id: string, sourcePlayerID: string }[] =
+      Object.values(this.allBullets);
     for (let bullet of BULLET_POSITIONS) {
-      const bmin: Position = [bullet.x - Bullet.size / 2, bullet.y - Bullet.size / 2, bullet.z - Bullet.size / 2];
-      const bmax: Position = [bullet.x + Bullet.size / 2, bullet.y + Bullet.size / 2, bullet.z + Bullet.size / 2];
-
+      const BULLET_MINIMUM_POSITION: Position = [bullet.x - Bullet.size / 2, bullet.y - Bullet.size / 2, bullet.z - Bullet.size / 2];
+      const BULLET_MAXIMUM_POSITION: Position = [bullet.x + Bullet.size / 2, bullet.y + Bullet.size / 2, bullet.z + Bullet.size / 2];
       if (
-        VectorMath.rectanglesCollide(bmin, bmax, this.player.charMin, this.player.charMax) &&
+        VectorMath.rectanglesCollide(BULLET_MINIMUM_POSITION, BULLET_MAXIMUM_POSITION, this.player.charMin, this.player.charMax) &&
         bullet.sourcePlayerID !== this.player.id
       ) {
-        this.player.takeDamage(Bullet.damage)
-        new RemoveBulletFromFirebaseByIDCommand(bullet.id).execute()
+        this.player.takeDamage(Bullet.damage);
+        new RemoveBulletFromFirebaseByIDCommand(bullet.id).execute();
       }
     }
   }
 
 
   private checkPlayerCollisionWithLasers(): void {
-    const LASERS: { position: Position, direction: Vector, isOn: boolean, id: string, sourcePlayerID: string }[] = Object.values(this.otherLasers)
-    const MAP_LENGTH_Z: number = Game.instance.gameMap.map.length * GameMap.tileSize
+    const LASERS: { position: Position, direction: Vector, isOn: boolean, id: string, sourcePlayerID: string }[] =
+      Object.values(this.otherLasers);
+    const MAP_LENGTH_Z: number = Game.instance.gameMap.map.length * GameMap.tileSize;
     const MAP_LENGTH_Y: number = Game.instance.gameMap.map[0].length * GameMap.tileSize;
-    const MAP_LENGTH_X: number = Game.instance.gameMap.map[0][0].length * GameMap.tileSize
+    const MAP_LENGTH_X: number = Game.instance.gameMap.map[0][0].length * GameMap.tileSize;
     
     for (let laser of LASERS) {
       if (laser.isOn) {
-        let currentPosition: Position = [laser.position[0], laser.position[1], laser.position[2]]
+        let currentPosition: Position = [laser.position[0], laser.position[1], laser.position[2]];
         while (true) {
           if (VectorMath.isPointInCube(currentPosition, this.player.charMin, this.player.charMax)) {
-            this.player.takeDamage(Laser.damage)
-            break
+            this.player.takeDamage(Laser.damage);
+            break;
           }
           if (
             currentPosition[0] >= 0 && currentPosition[0] < MAP_LENGTH_X &&
@@ -295,13 +285,13 @@ class Game {
               [Math.floor(currentPosition[1] / GameMap.tileSize)]
               [Math.floor(currentPosition[0] / GameMap.tileSize)] === 1
             ) {
-              break
+              break;
             }
           }
   
-          currentPosition[0] += laser.direction[0]
-          currentPosition[1] += laser.direction[1]
-          currentPosition[2] += laser.direction[2]
+          currentPosition[0] += laser.direction[0];
+          currentPosition[1] += laser.direction[1];
+          currentPosition[2] += laser.direction[2];
         }
       }
     }
@@ -332,12 +322,12 @@ class Game {
       // Draw laser shooting effect 
       Utilities.fillShapeOnVertices(
         [
-          [Canvas.WIDTH / 4 * 3 + 50, Canvas.HEIGHT], 
-          [Canvas.WIDTH / 4 * 3 - 50, Canvas.HEIGHT], 
+          [Canvas.WIDTH / 4 * 3 + 50, Canvas.HEIGHT],
+          [Canvas.WIDTH / 4 * 3 - 50, Canvas.HEIGHT],
           [Canvas.WIDTH / 2, Canvas.HEIGHT / 2],
         ],
         "white"
-      )
+      );
     } else {
       Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2, Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2, "white");
       Utilities.drawLine(Canvas.WIDTH / 2 - 10, Canvas.HEIGHT / 2 +1 , Canvas.WIDTH / 2 + 10, Canvas.HEIGHT / 2 +1, "white");
@@ -350,53 +340,53 @@ class Game {
 
 
     // Draw Health Bar
-    Canvas.instance.context.fillStyle = "red"
-    Canvas.instance.context.font = "24px Arial"
-    Canvas.instance.context.fillText("Health", Canvas.WIDTH/2 - 400, Canvas.HEIGHT-50)
-    this.healthBar.draw()
-    Canvas.instance.context.fillStyle = "red"
+    Canvas.instance.context.fillStyle = "red";
+    Canvas.instance.context.font = "24px Arial";
+    Canvas.instance.context.fillText("Health", Canvas.WIDTH / 2 - 400, Canvas.HEIGHT - 50);
+    Canvas.instance.context.fillStyle = "black";
+    Canvas.instance.context.fillRect(Canvas.WIDTH / 2 - 300, Canvas.HEIGHT - 80, 600, 60);
+    Canvas.instance.context.fillStyle = "red";
     Canvas.instance.context.fillRect(
-      (Canvas.WIDTH/2) - 290, Canvas.HEIGHT - 70, (this.player.health / this.player.maxHealth) * 580, 40
-    )
+      (Canvas.WIDTH / 2) - 290, Canvas.HEIGHT - 70, (this.player.health / this.player.maxHealth) * 580, 40
+    );
 
 
     // Draw Gauge Bar
-    Canvas.instance.context.fillStyle = "yellow"
-    Canvas.instance.context.fillText("Ammo", Canvas.WIDTH - 80, Canvas.HEIGHT / 2 - 40)
-    Canvas.instance.context.fillText("Gauge", Canvas.WIDTH-80, Canvas.HEIGHT/2-18)
-    Canvas.instance.context.fillStyle = "black"
+    Canvas.instance.context.fillStyle = "yellow";
+    Canvas.instance.context.fillText("Ammo", Canvas.WIDTH - 80, Canvas.HEIGHT / 2 - 40);
+    Canvas.instance.context.fillText("Gauge", Canvas.WIDTH - 80, Canvas.HEIGHT / 2 - 18);
+    Canvas.instance.context.fillStyle = "black";
     Canvas.instance.context.fillRect(
-      Canvas.WIDTH-80, Canvas.HEIGHT/2, 60, Canvas.HEIGHT/2 - 20
-    )
+      Canvas.WIDTH - 80, Canvas.HEIGHT / 2, 60, Canvas.HEIGHT / 2 - 20
+    );
     if (this.player.ammoGauge.canUse) {
-      Canvas.instance.context.fillStyle = "yellow"
+      Canvas.instance.context.fillStyle = "yellow";
     } else {
-      Canvas.instance.context.fillStyle = "gray"
+      Canvas.instance.context.fillStyle = "gray";
     }
-    const GAUGE_HEIGHT: number = (Canvas.HEIGHT / 2 - 60) * (this.player.ammoGauge.gauge / this.player.ammoGauge.maxGauge)
-    const MAX_GAUGE_HEIGHT: number = Canvas.HEIGHT/2 - 60
+    const GAUGE_HEIGHT: number = (Canvas.HEIGHT / 2 - 60) * (this.player.ammoGauge.gauge / this.player.ammoGauge.maxGauge);
+    const MAX_GAUGE_HEIGHT: number = Canvas.HEIGHT / 2 - 60;
     Canvas.instance.context.fillRect(
-      Canvas.WIDTH - 70, Canvas.HEIGHT / 2 + 20 + MAX_GAUGE_HEIGHT - GAUGE_HEIGHT, 40,
-      GAUGE_HEIGHT
-    )
+      Canvas.WIDTH - 70, Canvas.HEIGHT / 2 + 20 + MAX_GAUGE_HEIGHT - GAUGE_HEIGHT, 40, GAUGE_HEIGHT
+    );
   }
 
 
-  private renderForPlayer() {
-    this.clearScreen()
+  private renderForPlayer(): void {
+    this.clearScreen();
 
-    const ADJACENT_LENGTH_MAGNITUDE: number = (Canvas.WIDTH / 2) / Math.tan(this.player.fov / 2)
+    const ADJACENT_LENGTH_MAGNITUDE: number = (Canvas.WIDTH / 2) / Math.tan(this.player.fov / 2);
     const PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR: Vector =
-      VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch])
+      VectorMath.convertYawAndPitchToUnitVector([this.player.yaw, this.player.pitch]);
     const PLAYER_TO_VIEWPORT_CENTER_VECTOR: Vector =
-      VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE)
+      VectorMath.convertUnitVectorToVector(PLAYER_TO_VIEWPORT_CENTER_UNIT_VECTOR, ADJACENT_LENGTH_MAGNITUDE);
     
     // 1 unit vector from the left of the view port to the right
-    const PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR: Vector = 
-      VectorMath.convertYawAndPitchToUnitVector([this.player.yaw + Math.PI / 2, 0])
+    const PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR: Vector =
+      VectorMath.convertYawAndPitchToUnitVector([this.player.yaw + Math.PI / 2, 0]);
     
     // 1 unit vector from the top of the viewport to the bottom
-    let PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR: Vector
+    let PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR: Vector;
     
     if (this.player.pitch >= 0) {
       PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR =
@@ -409,12 +399,12 @@ class Game {
 
     let playerToViewportTopLeftVector: Vector = VectorMath.addVectors(
       PLAYER_TO_VIEWPORT_CENTER_VECTOR,
-      VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, -Canvas.WIDTH/2)
-    )
+      VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, -Canvas.WIDTH / 2)
+    );
     playerToViewportTopLeftVector = VectorMath.addVectors(
       playerToViewportTopLeftVector,
-      VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, -Canvas.HEIGHT/2)
-    )
+      VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, -Canvas.HEIGHT / 2)
+    );
 
     
     for (let x: number = 0; x < Canvas.WIDTH; x += this.resolution) {
@@ -459,21 +449,21 @@ class Game {
             VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, x),
             VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, y)
           );
-        let vectorFromPlayerToPoint: Vector = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector)
-        let rayAngles: Direction = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint)
+        let vectorFromPlayerToPoint: Vector = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector);
+        let rayAngles: Direction = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint);
 
-        const RAW_RAY_DISTANCE: number[] = this.player.castBlockVisionRayVersion3(rayAngles[0], rayAngles[1]);
+        const RAW_RAY_RESULTS: number[] = this.player.castBlockVisionRayVersion3(rayAngles[0], rayAngles[1]);
         
         // custom shading
         // render the pixel
-        const COLOR: number[] = PIXEL_COLORS[RAW_RAY_DISTANCE[1]]
-        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 1) * this.brightnessMultiplier
-
+        const COLOR: number[] = PIXEL_COLORS[RAW_RAY_RESULTS[1]];
+        const brightness: number = Math.min((GameMap.tileSize / RAW_RAY_RESULTS[0]), 1) * this.brightnessMultiplier;
+        
         Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},
           ${Math.floor(COLOR[2] * brightness)}
-          )`)
+          )`);
       }
     }
   }
@@ -481,7 +471,7 @@ class Game {
   
   public static get instance(): Game {
     if (Game._instance === undefined) {
-      Game._instance = new Game()
+      Game._instance = new Game();
     }
     return Game._instance;
   }

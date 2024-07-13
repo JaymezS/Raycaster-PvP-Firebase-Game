@@ -97,12 +97,6 @@ class VectorMath {
         const intersectionPoint = VectorMath.addVectors(linePoint, VectorMath.scalarMultiply(lineDirection, t));
         return intersectionPoint;
     }
-    // CHATGPT code that complements findLineCubeIntersections
-    static isPointInsideCube(point, cubeMin, cubeMax) {
-        return (point[0] >= cubeMin[0] && point[0] <= cubeMax[0]) &&
-            (point[1] >= cubeMin[1] && point[1] <= cubeMax[1]) &&
-            (point[2] >= cubeMin[2] && point[2] <= cubeMax[2]);
-    }
     static findLineCubeIntersections(linePoint, lineDirection, cubeMin, cubeMax) {
         const normals = [
             [1, 0, 0], [-1, 0, 0],
@@ -117,7 +111,7 @@ class VectorMath {
         let intersectionsResults = [];
         for (let i = 0; i < normals.length; i++) {
             const intersection = VectorMath.linePlaneIntersection(normals[i], points[i], linePoint, lineDirection);
-            if (intersection && VectorMath.isPointInsideCube(intersection, cubeMin, cubeMax)) {
+            if (intersection && VectorMath.isPointInCube(intersection, cubeMin, cubeMax)) {
                 intersectionsResults.push(intersection);
             }
         }

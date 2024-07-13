@@ -12,7 +12,6 @@ import { ref, onValue,
 import { FirebaseClient } from "./FirebaseClient.js";
 import { VectorMath } from "./Vector.js";
 import { Bullet } from "./Bullet.js";
-import { Rectangle } from "./Shapes.js";
 import { Laser } from "./Laser.js";
 class Game {
     static _instance;
@@ -23,10 +22,10 @@ class Game {
     gameLoop = undefined;
     FPS = 30;
     timeInterval = 1000 / this.FPS;
+    /** pixel size */
     resolution = 10;
     gravitationalAccelerationConstant = 1;
     terminalVelocity = 12;
-    maxRenderDistance = 8 * GameMap.tileSize;
     pauseMenuBrightnessMultiplier = 0.1;
     defaultBrightnessMultiplier = 0.9;
     brightnessMultiplier = this.defaultBrightnessMultiplier;
@@ -41,7 +40,6 @@ class Game {
     otherPlayers = {};
     allBullets = {};
     otherLasers = {};
-    healthBar = new Rectangle(Canvas.WIDTH / 2 - 300, Canvas.HEIGHT - 80, "Black", 600, 60);
     get mainMenu() {
         return this._mainMenu;
     }
@@ -57,6 +55,9 @@ class Game {
             new RemoveClientPlayerFromDatabaseCommand().execute();
         });
     }
+    /**
+     * functions that runs when the program starts (cannot put in constructor to avoid conflict)
+     */
     start() {
         new DisplayMenuAndSetMouseControllerCommand(this.mainMenu).execute();
     }
@@ -100,7 +101,6 @@ class Game {
                 this.bulletsToRemove.splice(i, 1);
             }
         }
-        // delete ghost bullets (that do not exist in db)
     }
     startGame() {
         this.player.setLocation(this.spawnLocation);
@@ -169,14 +169,13 @@ class Game {
         new RemoveClientPlayerFromDatabaseCommand().execute();
         new RemoveAllBulletsBySelfFromDatabaseCommand().execute();
         new RemoveOwnLaserFromFirebaseCommand().execute();
-        this.player.determineIntendedMovementDirectionVectorBasedOnAccelerationDirections();
     }
     checkPlayerCollisionWithBullets() {
         const BULLET_POSITIONS = Object.values(this.allBullets);
         for (let bullet of BULLET_POSITIONS) {
-            const bmin = [bullet.x - Bullet.size / 2, bullet.y - Bullet.size / 2, bullet.z - Bullet.size / 2];
-            const bmax = [bullet.x + Bullet.size / 2, bullet.y + Bullet.size / 2, bullet.z + Bullet.size / 2];
-            if (VectorMath.rectanglesCollide(bmin, bmax, this.player.charMin, this.player.charMax) &&
+            const BULLET_MINIMUM_POSITION = [bullet.x - Bullet.size / 2, bullet.y - Bullet.size / 2, bullet.z - Bullet.size / 2];
+            const BULLET_MAXIMUM_POSITION = [bullet.x + Bullet.size / 2, bullet.y + Bullet.size / 2, bullet.z + Bullet.size / 2];
+            if (VectorMath.rectanglesCollide(BULLET_MINIMUM_POSITION, BULLET_MAXIMUM_POSITION, this.player.charMin, this.player.charMax) &&
                 bullet.sourcePlayerID !== this.player.id) {
                 this.player.takeDamage(Bullet.damage);
                 new RemoveBulletFromFirebaseByIDCommand(bullet.id).execute();
@@ -247,7 +246,8 @@ class Game {
         Canvas.instance.context.fillStyle = "red";
         Canvas.instance.context.font = "24px Arial";
         Canvas.instance.context.fillText("Health", Canvas.WIDTH / 2 - 400, Canvas.HEIGHT - 50);
-        this.healthBar.draw();
+        Canvas.instance.context.fillStyle = "black";
+        Canvas.instance.context.fillRect(Canvas.WIDTH / 2 - 300, Canvas.HEIGHT - 80, 600, 60);
         Canvas.instance.context.fillStyle = "red";
         Canvas.instance.context.fillRect((Canvas.WIDTH / 2) - 290, Canvas.HEIGHT - 70, (this.player.health / this.player.maxHealth) * 580, 40);
         // Draw Gauge Bar
@@ -315,11 +315,11 @@ class Game {
                 let viewportTopLeftToPointVector = VectorMath.addVectors(VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_HORIZONTAL_UNIT_VECTOR, x), VectorMath.convertUnitVectorToVector(PLAYER_VIEWPORT_VERTICAL_UNIT_VECTOR, y));
                 let vectorFromPlayerToPoint = VectorMath.addVectors(playerToViewportTopLeftVector, viewportTopLeftToPointVector);
                 let rayAngles = VectorMath.convertVectorToYawAndPitch(vectorFromPlayerToPoint);
-                const RAW_RAY_DISTANCE = this.player.castBlockVisionRayVersion3(rayAngles[0], rayAngles[1]);
+                const RAW_RAY_RESULTS = this.player.castBlockVisionRayVersion3(rayAngles[0], rayAngles[1]);
                 // custom shading
                 // render the pixel
-                const COLOR = PIXEL_COLORS[RAW_RAY_DISTANCE[1]];
-                const brightness = Math.min((GameMap.tileSize / RAW_RAY_DISTANCE[0]), 1) * this.brightnessMultiplier;
+                const COLOR = PIXEL_COLORS[RAW_RAY_RESULTS[1]];
+                const brightness = Math.min((GameMap.tileSize / RAW_RAY_RESULTS[0]), 1) * this.brightnessMultiplier;
                 Utilities.drawPixel(x, y, `rgb(
           ${Math.floor(COLOR[0] * brightness)},
           ${Math.floor(COLOR[1] * brightness)},

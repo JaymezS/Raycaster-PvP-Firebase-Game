@@ -42,28 +42,6 @@ class Utilities {
             Canvas.instance.context.fill(shape);
         }
     }
-    // modified code from StackOverflow to autowrap texts in canvas
-    static writeLargeText(text, x, y, maxWidth, fontSize = 16, fontFace = "Arial") {
-        var words = text.split(' ');
-        var line = '';
-        var lineHeight = fontSize;
-        Canvas.instance.context.fillStyle = "black";
-        Canvas.instance.context.font = fontSize + "px " + fontFace;
-        for (var n = 0; n < words.length; n++) {
-            var testLine = line + words[n] + ' ';
-            var metrics = Canvas.instance.context.measureText(testLine);
-            var testWidth = metrics.width;
-            if (testWidth > maxWidth) {
-                Canvas.instance.context.fillText(line, x, y);
-                line = words[n] + ' ';
-                y += lineHeight;
-            }
-            else {
-                line = testLine;
-            }
-        }
-        Canvas.instance.context.fillText(line, x, y);
-    }
 }
 export { Utilities };
 //# sourceMappingURL=Utilities.js.map

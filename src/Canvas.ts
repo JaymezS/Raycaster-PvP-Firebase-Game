@@ -7,7 +7,7 @@ class Canvas {
     if (Canvas._instance === undefined) {
       Canvas._instance = new Canvas();
     }
-    return Canvas._instance
+    return Canvas._instance;
   } 
   
 
@@ -28,9 +28,9 @@ class Canvas {
   }
 
 
-  public startGame() {
-    Game.instance
-    Game.instance.start()
+  public startGame(): void {
+    Game.instance;
+    Game.instance.start();
   }
 }
 

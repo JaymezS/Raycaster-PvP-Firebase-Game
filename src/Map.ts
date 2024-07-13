@@ -1,6 +1,5 @@
-import { Game } from "./Game";
 
-const PIXEL_COLORS: number[][] = [[0, 255, 255], [0, 255, 0], [200, 200, 200], [255, 255, 0], 	[169, 169, 169]]
+const PIXEL_COLORS: number[][] = [[0, 255, 255], [0, 255, 0], [200, 200, 200], [255, 255, 0], [169, 169, 169]];
 enum Colors {
   AQUA = 0,
   GREEN = 1,
@@ -12,23 +11,18 @@ enum Colors {
 
 class GameMap {
   public static tileSize = 64;
-  public baseTileColor: number[] = [255, 255, 255]
-  public floorColor: number[] = [64, 64, 64]
-  public ceilingColor: number[] = [0, 0, 125]
+  public static _wallBitSize: number = 4;
+  public static wallTexture: number[][][] = [];
 
-  // horizontal & vertical
-  // texture must have tileSize/wallBitSize rows and columns
-  static _wallBitSize: number = 4
 
   public static get wallBitSize(): number {
-    return GameMap._wallBitSize
+    return GameMap._wallBitSize;
   }
 
-  static wallTexture: number[][][] = []
 
 
   constructor() {
-    GameMap.wallTexture =   [
+    GameMap.wallTexture = [
       [
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
@@ -46,9 +40,9 @@ class GameMap {
         [4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-       ],
+      ],
         
-       [
+      [
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
@@ -65,9 +59,9 @@ class GameMap {
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
         [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-       ]   
-    ]
-    GameMap._wallBitSize = 4
+      ]
+    ];
+    GameMap._wallBitSize = 4;
     // fetch("./assets/textures.json")
     // .then((res) => { return res.json() })
     //   .then((data) => {
@@ -287,7 +281,7 @@ class GameMap {
   ];
 
   public get map(): number[][][] {
-    return this._map
+    return this._map;
   }
 }
 

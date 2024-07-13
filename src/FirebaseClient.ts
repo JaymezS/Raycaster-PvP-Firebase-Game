@@ -8,20 +8,18 @@ import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 
 class FirebaseClient {
   private static _instance: FirebaseClient | undefined;
-  private app = initializeApp(firebaseConfig)
-  private _db = getDatabase(this.app)
-
-  private constructor() { }
+  private app = initializeApp(firebaseConfig);
+  private _db = getDatabase(this.app);
   
   public static get instance(): FirebaseClient {
     if (FirebaseClient._instance === undefined) {
-      FirebaseClient._instance = new FirebaseClient()
+      FirebaseClient._instance = new FirebaseClient();
     }
     return FirebaseClient._instance;
   }
 
   public get db() {
-    return this._db
+    return this._db;
   }
 }
 
