@@ -130,28 +130,30 @@ class DisplayTextCommand {
         this.maxWidth = maxWidth;
     }
     execute() {
+        console.log(`displayed at ${this.x}, ${this.y}`);
         // modified code from StackOverflow to autowrap texts in canvas
-        let fontSize = 16;
-        let fontFace = "Arial";
+        let tempY = this.y;
+        let fontSize = 20;
+        let fontFace = "Agency FB";
         let words = this.text.split(' ');
         let line = '';
         let lineHeight = fontSize;
-        Canvas.instance.context.fillStyle = "black";
+        Canvas.instance.context.fillStyle = "white";
         Canvas.instance.context.font = fontSize + "px " + fontFace;
         for (let n = 0; n < words.length; n++) {
             let testLine = line + words[n] + ' ';
             let metrics = Canvas.instance.context.measureText(testLine);
             let testWidth = metrics.width;
             if (testWidth > this.maxWidth) {
-                Canvas.instance.context.fillText(line, this.x, this.y);
+                Canvas.instance.context.fillText(line, this.x, tempY);
                 line = words[n] + ' ';
-                this.y += lineHeight;
+                tempY += lineHeight;
             }
             else {
                 line = testLine;
             }
         }
-        Canvas.instance.context.fillText(line, this.x, this.y);
+        Canvas.instance.context.fillText(line, this.x, tempY);
     }
 }
 /**

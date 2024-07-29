@@ -24,7 +24,7 @@ class MenuButton extends Rectangle {
     draw() {
         super.draw();
         Canvas.instance.context.fillStyle = "white";
-        Canvas.instance.context.font = "16px Arial";
+        Canvas.instance.context.font = "24px Agency FB";
         const TEXT_WIDTH = 8 * this.title.length;
         if (TEXT_WIDTH >= this.width * 4 / 5) {
             const WORDS = this.title.split(" ");
@@ -97,8 +97,8 @@ class CompositeMenu {
             this.renderBackgroundCommand.execute();
         }
         const TEXT_WIDTH = 20 * this.title.length;
-        Canvas.instance.context.fillStyle = "blue";
-        Canvas.instance.context.font = "40px Arial";
+        Canvas.instance.context.fillStyle = "White";
+        Canvas.instance.context.font = "bold 60px Agency FB";
         Canvas.instance.context.fillText(`${this.title}`, Canvas.WIDTH / 2 - TEXT_WIDTH / 2, Canvas.HEIGHT / 4);
         this.drawAllButtons();
         for (let command of this.displayElementCommands) {

@@ -146,17 +146,18 @@ class ShootBulletCommand implements Command {
  * display a paragraph of text at the given x and y positions with width "maxWidth"
  */
 class DisplayTextCommand implements Command {
-  constructor(private text: string, private x: number, private y: number, private maxWidth: number) { }
+  constructor(private text: string, private x: number, private y: number, private maxWidth: number) {}
   
   public execute(): void {
+    console.log(`displayed at ${this.x}, ${this.y}`)
     // modified code from StackOverflow to autowrap texts in canvas
-
-    let fontSize: number = 16;
-    let fontFace: string = "Arial";
+    let tempY: number = this.y
+    let fontSize: number = 20;
+    let fontFace: string = "Agency FB";
     let words = this.text.split(' ');
     let line = '';
     let lineHeight=fontSize;
-    Canvas.instance.context.fillStyle = "black";
+    Canvas.instance.context.fillStyle = "white";
     Canvas.instance.context.font = fontSize + "px " + fontFace;
   
     for(let n = 0; n < words.length; n++) {
@@ -164,15 +165,15 @@ class DisplayTextCommand implements Command {
       let metrics = Canvas.instance.context.measureText(testLine);
       let testWidth = metrics.width;
       if (testWidth > this.maxWidth) {
-        Canvas.instance.context.fillText(line, this.x, this.y);
+        Canvas.instance.context.fillText(line, this.x, tempY);
         line = words[n] + ' ';
-        this.y += lineHeight;
+        tempY += lineHeight;
       }
       else {
         line = testLine;
       }
     }
-    Canvas.instance.context.fillText(line, this.x, this.y);
+    Canvas.instance.context.fillText(line, this.x, tempY);
   }
 }
 

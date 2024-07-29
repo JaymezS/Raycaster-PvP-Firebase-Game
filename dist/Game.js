@@ -32,7 +32,7 @@ class Game {
     spawnLocation = [GameMap.tileSize * 1.5, GameMap.tileSize * 1.5, GameMap.tileSize * 1.9];
     spawnDirection = [0, 0];
     isPaused = true;
-    _mainMenu = new CompositeMenu("JamesCraft Shooter");
+    _mainMenu = new CompositeMenu("Box Blasters");
     pauseMenu = new CompositeMenu("Game Paused");
     _gameOverMenu = new CompositeMenu("Game Over");
     bulletsBySelf = [];
@@ -127,7 +127,7 @@ class Game {
                 new DisplayMenuAndSetMouseControllerCommand(this.pauseMenu).execute();
             }
             // displays FPS
-            this.context.font = "24px Arial";
+            this.context.font = "24px Agency FB";
             this.context.fillStyle = "white";
             this.context.fillText(`MAX FPS: ${Math.round(1000 / (performance.now() - TIME))}`, 50, 50);
         }, this.timeInterval);
@@ -135,7 +135,7 @@ class Game {
     composeMainMenu() {
         const START_BUTTON = new MenuButton(Canvas.WIDTH / 2 - MenuButton.buttonWidth / 2, Canvas.HEIGHT / 2 - MenuButton.buttonHeight / 2, "Start Game");
         START_BUTTON.addCommand(new StartGameCommand());
-        const INSTRUCTION_PARAGRAPH = `Welcome to my 3D PvP shooter Game, the goal of the game is to eliminate other players, click "Start Game" to begin, left click in game to toggle a hit-scan laser that does minimum damage, right click to shoot a slow projectile that does heavy damage.`;
+        const INSTRUCTION_PARAGRAPH = " - Goal: eliminate other players. Click 'Start Game' to begin. Left click in game to toggle a hit - scan laser, right click to shoot a slow projectile. Use the WASD keys to move, space key to jump. Use the mouse to look around. Press Esc to toggle the pause menu (only for yourself)";
         const UI_EXPLAINATION_PARAGRAPH = "The red bar at the bottom is the health bar, when it reaches 0, it is Game Over. The bar on the right is your ammunition bar, lasers will consistently drain ammo when on, and bullets will cost a chunk of ammo when shooting. New lasers and bullets cannot be used when the ammo is below a certain threshold. Ammo will regenerate slower if used below that threshold (tip: try to keep ammo above the threshold, shoot in bursts)";
         const INSTRUCTION_COMMAND = new DisplayTextCommand(INSTRUCTION_PARAGRAPH, Canvas.WIDTH / 4, Canvas.HEIGHT / 2, 300);
         const UI_COMMAND = new DisplayTextCommand(UI_EXPLAINATION_PARAGRAPH, Canvas.WIDTH / 4 * 3 - 300, Canvas.HEIGHT / 2, 300);
@@ -244,7 +244,7 @@ class Game {
         }
         // Draw Health Bar
         Canvas.instance.context.fillStyle = "red";
-        Canvas.instance.context.font = "24px Arial";
+        Canvas.instance.context.font = "24px Agency FB";
         Canvas.instance.context.fillText("Health", Canvas.WIDTH / 2 - 400, Canvas.HEIGHT - 50);
         Canvas.instance.context.fillStyle = "black";
         Canvas.instance.context.fillRect(Canvas.WIDTH / 2 - 300, Canvas.HEIGHT - 80, 600, 60);

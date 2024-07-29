@@ -38,7 +38,7 @@ class Game {
 
   public isPaused: boolean = true;
   
-  private _mainMenu: CompositeMenu = new CompositeMenu("JamesCraft Shooter");
+  private _mainMenu: CompositeMenu = new CompositeMenu("Box Blasters");
   private pauseMenu: CompositeMenu = new CompositeMenu("Game Paused");
   private _gameOverMenu: CompositeMenu = new CompositeMenu("Game Over");
 
@@ -168,7 +168,7 @@ class Game {
       }
 
       // displays FPS
-      this.context.font = "24px Arial";
+      this.context.font = "24px Agency FB";
       this.context.fillStyle = "white";
       this.context.fillText(`MAX FPS: ${Math.round(1000 / (performance.now() - TIME))}`, 50, 50);
     }, this.timeInterval);
@@ -184,7 +184,7 @@ class Game {
     START_BUTTON.addCommand(new StartGameCommand());
 
 
-    const INSTRUCTION_PARAGRAPH: string = `Welcome to my 3D PvP shooter Game, the goal of the game is to eliminate other players, click "Start Game" to begin, left click in game to toggle a hit-scan laser that does minimum damage, right click to shoot a slow projectile that does heavy damage.`;
+    const INSTRUCTION_PARAGRAPH: string = " - Goal: eliminate other players. Click 'Start Game' to begin. Left click in game to toggle a hit - scan laser, right click to shoot a slow projectile. Use the WASD keys to move, space key to jump. Use the mouse to look around. Press Esc to toggle the pause menu (only for yourself)";
     const UI_EXPLAINATION_PARAGRAPH: string = "The red bar at the bottom is the health bar, when it reaches 0, it is Game Over. The bar on the right is your ammunition bar, lasers will consistently drain ammo when on, and bullets will cost a chunk of ammo when shooting. New lasers and bullets cannot be used when the ammo is below a certain threshold. Ammo will regenerate slower if used below that threshold (tip: try to keep ammo above the threshold, shoot in bursts)";
 
 
@@ -341,7 +341,7 @@ class Game {
 
     // Draw Health Bar
     Canvas.instance.context.fillStyle = "red";
-    Canvas.instance.context.font = "24px Arial";
+    Canvas.instance.context.font = "24px Agency FB";
     Canvas.instance.context.fillText("Health", Canvas.WIDTH / 2 - 400, Canvas.HEIGHT - 50);
     Canvas.instance.context.fillStyle = "black";
     Canvas.instance.context.fillRect(Canvas.WIDTH / 2 - 300, Canvas.HEIGHT - 80, 600, 60);
